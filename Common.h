@@ -8,6 +8,7 @@
 #include <format>
 #include <iostream>
 #include <fstream>
+#include <chrono>
 
 #define SV_DECL_PTRS(TYPENAME)  using TYPENAME ## Shared = std::shared_ptr<TYPENAME>;\
                                 using TYPENAME ## Weak   = std::weak_ptr  <TYPENAME>;\
@@ -21,6 +22,28 @@
 SV_DECL_OPT(int)
 
 
+//todo delete:
+// if you want to have same function in two versions:   - T function();
+//                                                      - const T function() const;
+// And want to avoid code duplication, define const one first, then add:
+// 'T function() { return SV_STRIP_CONST(T, function() ); }
+//
+// Compiler is guaranteed to choose const version for inner call, apparently.
+
+
+template<typename T> 
+inline T* removeConst(const T* ptr)
+{ 
+    return const_cast<T*>(ptr);
+}
+
+template<typename T>
+inline const T* asConst(T* ptr)
+{ 
+    return static_cast<const T*>(ptr);
+}
+
+std::string getCurrentTimeHMS();
 
 class ANSICodes
 {
