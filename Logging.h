@@ -6,12 +6,12 @@
 #define SV_DO_LOG_BASE(LEVEL, MSG)            SV_DO_LOG_FULL(LEVEL, MSG, std::string())
 #define SV_GET_LOG_MACRO_WITH_1_OR_2_ARGS(_1, _2, NAME, ...) NAME
 
-#define SV_LOG2(CATEGORY, MSG)      SV_DO_LOG_FULL( Logger::Level::Info,    MSG, CATEGORY )
 #define SV_LOG1(MSG)                SV_DO_LOG_BASE( Logger::Level::Info,    MSG )
-#define SV_WARN2(CATEGORY, MSG)     SV_DO_LOG_FULL( Logger::Level::Warn,    MSG, CATEGORY )
+#define SV_LOG2(CATEGORY, MSG)      SV_DO_LOG_FULL( Logger::Level::Info,    MSG, CATEGORY )
 #define SV_WARN1(MSG)               SV_DO_LOG_BASE( Logger::Level::Warn,    MSG )
-#define SV_ERROR2(CATEGORY, MSG)    SV_DO_LOG_FULL( Logger::Level::Error,   MSG, CATEGORY )
+#define SV_WARN2(CATEGORY, MSG)     SV_DO_LOG_FULL( Logger::Level::Warn,    MSG, CATEGORY )
 #define SV_ERROR1(MSG)              SV_DO_LOG_BASE( Logger::Level::Error,   MSG )
+#define SV_ERROR2(CATEGORY, MSG)    SV_DO_LOG_FULL( Logger::Level::Error,   MSG, CATEGORY )
 // </internal>
 
 
