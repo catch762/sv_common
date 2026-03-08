@@ -9,6 +9,7 @@
 #include <iostream>
 #include <fstream>
 #include <chrono>
+#include <utility>
 
 #define SV_DECL_PTRS(TYPENAME)  using TYPENAME ## Shared = std::shared_ptr<TYPENAME>;\
                                 using TYPENAME ## Weak   = std::weak_ptr  <TYPENAME>;\
@@ -20,15 +21,6 @@
 
 
 SV_DECL_OPT(int)
-
-
-//todo delete:
-// if you want to have same function in two versions:   - T function();
-//                                                      - const T function() const;
-// And want to avoid code duplication, define const one first, then add:
-// 'T function() { return SV_STRIP_CONST(T, function() ); }
-//
-// Compiler is guaranteed to choose const version for inner call, apparently.
 
 
 template<typename T> 

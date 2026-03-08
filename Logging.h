@@ -25,6 +25,20 @@
                             SV_DO_LOG_BASE(Logger::Level::Assert, #COND)\
                             assert(false);} }
 
+// <internal>                            
+#ifdef __cpp_lib_unreachable  // C++23, from <utility>
+    #define SV_UNREACHABLE_CALL() std::unreachable()
+#elif defined(__GNUC__) || defined(__clang__)
+    #define SV_UNREACHABLE_CALL() __builtin_unreachable()
+#elif defined(_MSC_VER)
+    #define SV_UNREACHABLE_CALL() __assume(false)
+#else
+    #define SV_UNREACHABLE_CALL()
+#endif
+// </internal>
+#define SV_UNREACHABLE() SV_ASSERT(false && "Unreachable reached!"); SV_UNREACHABLE_CALL();
+
+
 class Logger
 {
 public:
