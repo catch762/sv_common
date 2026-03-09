@@ -71,12 +71,27 @@ public:
 
         auto finalText = std::format(R"({}, {} {}{}: {})", FILE, std::to_string(LINE), levelData.name, cat, msg);
 
-        printMessageToTerminal(finalText, levelData.ansiColor);
+        doLogMessage(finalText, levelData.ansiColor);
+    }
+
+    void doLogMessage(const std::string &finalMsg, const std::string &ansiColor)
+    {
+        printMessageToTerminal(finalMsg, ansiColor);
 
         if (printToFile)
         {
-            appendMessageToFile(finalText);
+            appendMessageToFile(finalMsg);
         }
+    }
+
+    void logAppLaunchMessage()
+    {
+        auto text = format( "\n"
+                            "**************************************\n"
+                            "-------- app launch {} ---------\n"
+                            "**************************************\n",
+                            getCurrentTimeHMS());
+        doLogMessage(text, ANSICodes::bold + ANSICodes::cyan);        
     }
 
     // e.g. setting it to Level::Warn will completely filter out Level::Info
