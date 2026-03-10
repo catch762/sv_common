@@ -21,6 +21,8 @@
 
 
 SV_DECL_OPT(int)
+SV_DECL_OPT(bool)
+SV_DECL_OPT(double)
 
 
 template<typename T> 
@@ -65,3 +67,10 @@ public:
         return std::format("\033[38;2;{};{};{}m", r, g, b);
     }
 };
+
+/*
+template<typename T>
+inline T mix(T a, T b, double b_ratio01)
+{
+    return a + (b - a) * b_ratio01;
+}*/
