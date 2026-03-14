@@ -74,3 +74,15 @@ inline T mix(T a, T b, double b_ratio01)
 {
     return a + (b - a) * b_ratio01;
 }
+
+//returns 0 if value is at left, returns 1 if value is at right. Result clamped to [0,1]
+template<typename T>
+inline double getValue01Clamped(T value, T left, T right)
+{
+    T span = right-left;
+    if (double(abs(span)) < (std::numeric_limits<double>::epsilon() * 100.0))
+    {
+        return 0.0;
+    }
+    return std::clamp(value / span, 0.0, 1.0);
+}
