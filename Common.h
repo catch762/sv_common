@@ -11,6 +11,7 @@
 #include <chrono>
 #include <utility>
 
+
 #define SV_DECL_PTRS(TYPENAME)  using TYPENAME ## Shared = std::shared_ptr<TYPENAME>;\
                                 using TYPENAME ## Weak   = std::weak_ptr  <TYPENAME>;\
                                 using TYPENAME ## Unique = std::unique_ptr<TYPENAME>;
@@ -84,5 +85,7 @@ inline double getValue01Clamped(T value, T left, T right)
     {
         return 0.0;
     }
-    return std::clamp(value / span, 0.0, 1.0);
+    auto res = std::clamp((value-left) / span, 0.0, 1.0);
+
+    return res;
 }
