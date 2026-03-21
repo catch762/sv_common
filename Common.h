@@ -76,16 +76,34 @@ inline T mix(T a, T b, double b_ratio01)
     return a + (b - a) * b_ratio01;
 }
 
-//returns 0 if value is at left, returns 1 if value is at right. Result clamped to [0,1]
-template<typename T>
-inline double getValue01Clamped(T value, T left, T right)
+inline double value11To01(double value11u)
 {
-    T span = right-left;
-    if (double(abs(span)) < (std::numeric_limits<double>::epsilon() * 100.0))
+    auto value01u = (value11u + 1.0) * 0.5;
+    return std::clamp(value01u, 0.0, 1.0);
+}
+
+inline double value01To11(double value01u)
+{
+    auto value11u = value01u * 2.0 - 1.0;
+    return std::clamp(value11u, -1.0, 1.0);
+}
+
+//returns 0 if value is at left, returns 1 if value is at right. Result clamped to [0,1]
+inline double getValue01Clamped(double value, double left, double right)
+{
+    double span = right-left;
+
+    if (abs(span) < (std::numeric_limits<double>::epsilon() * 100.0))
     {
         return 0.0;
     }
+
     auto res = std::clamp((value-left) / span, 0.0, 1.0);
 
     return res;
+}
+
+inline double getValue11Clamped(double value, double left, double right)
+{
+    return value01To11( getValue01Clamped(value, left, right) );
 }
