@@ -107,3 +107,8 @@ inline double getValue11Clamped(double value, double left, double right)
 {
     return value01To11( getValue01Clamped(value, left, right) );
 }
+
+inline bool isValidIndex(intOpt index, int itemsCount)
+{
+    return index && *index >= 0 && *index < itemsCount;
+}
