@@ -114,27 +114,5 @@ inline bool isValidIndex(intOpt index, int itemsCount)
 }
 
 
-//***************************************************************
-// Example usage:
-//
-//      class YourCustomType
-//      {
-//          std::string toString(){return "...";}
-//      }
-//
-//      SV_DECL_STD_FORMATTER(YourCustomType, obj.toString());
-//
-// Then you can do std::print, std::format etc:
-//
-//      YourCustomType val;
-//      std::print("Hello, val is {}", val);
-//***************************************************************
-#define SV_DECL_STD_FORMATTER(TYPENAME, EXPRESSION_THAT_MAKES_STDSTRING_FROM_OBJ)                   \
-    template <>                                                                                     \
-    struct std::formatter<TYPENAME> {                                                               \
-        constexpr auto parse(std::format_parse_context& ctx) { return ctx.begin(); }                \
-        auto format(const TYPENAME& obj, std::format_context& ctx) const {                          \
-            return std::format_to(ctx.out(), "{}", (EXPRESSION_THAT_MAKES_STDSTRING_FROM_OBJ) );    \
-        }                                                                                           \
-    };
+
     
