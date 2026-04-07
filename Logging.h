@@ -86,12 +86,18 @@ public:
 
     void logAppLaunchMessage()
     {
-        auto text = format( "\n"
+        auto text = std::format( "\n"
                             "**************************************\n"
                             "-------- app launch {} ---------\n"
                             "**************************************\n",
                             getCurrentTimeHMS());
         doLogMessage(text, ANSICodes::bold + ANSICodes::cyan);        
+    }
+
+    void logAppExitMessage(int returnCode)
+    {
+        auto text = std::format("-------- app exited with {} ---------", returnCode);
+        doLogMessage(text, ANSICodes::bold + ANSICodes::cyan);
     }
 
     // e.g. setting it to Level::Warn will completely filter out Level::Info

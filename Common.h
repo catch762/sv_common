@@ -12,9 +12,12 @@
 #include <utility>
 
 
-#define SV_DECL_PTRS(TYPENAME)  using TYPENAME ## Shared = std::shared_ptr<TYPENAME>;\
-                                using TYPENAME ## Weak   = std::weak_ptr  <TYPENAME>;\
-                                using TYPENAME ## Unique = std::unique_ptr<TYPENAME>;
+#define SV_DECL_PTRS(TYPENAME)  using TYPENAME ## Shared          = std::shared_ptr<TYPENAME>;\
+                                using TYPENAME ## Weak            = std::weak_ptr  <TYPENAME>;\
+                                using TYPENAME ## Unique          = std::unique_ptr<TYPENAME>;\
+                                using Const ## TYPENAME ## Shared = std::shared_ptr<const TYPENAME>;\
+                                using Const ## TYPENAME ## Weak   = std::weak_ptr<const TYPENAME>;\
+                                using Const ## TYPENAME ## Unique = std::unique_ptr<const TYPENAME>;
 
 #define SV_DECL_OPT(TYPENAME)   using TYPENAME ## Opt    = std::optional<TYPENAME>;
 
