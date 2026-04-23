@@ -116,6 +116,18 @@ inline bool isValidIndex(intOpt index, int itemsCount)
     return index && *index >= 0 && *index < itemsCount;
 }
 
+/*
+template<class... Ts>
+struct sv_overloaded : Ts... { using Ts::operator()...; };
+template<class... Ts>
+sv_overloaded(Ts...) -> sv_overloaded<Ts...>;
+*/
 
-
-    
+template <typename VectorT>
+concept IsStdVector = std::same_as<
+    std::decay_t<VectorT>,
+    std::vector<typename std::decay_t<VectorT>::value_type, typename std::decay_t<VectorT>::allocator_type>
+>;
+// usage: using TypeInt = getVectorElementType<decltype( std::vector<int>{} )>;
+template <IsStdVector VectorT>
+using getVectorElementType = typename std::decay_t<VectorT>::value_type;
