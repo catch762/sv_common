@@ -1,5 +1,6 @@
 #pragma once
 #include "Common.h"
+#include <filesystem>
 
 // <internal: these get used by other logging macros>
 #define SV_DO_LOG_FULL(LEVEL, MSG, CATEGORY)  Logger::instance().log(MSG, LEVEL, CATEGORY, __FILE_NAME__, __LINE__);
@@ -86,11 +87,15 @@ public:
 
     void logAppLaunchMessage()
     {
+        auto workFolder = std::filesystem::current_path().string();
+
         auto text = std::format( "\n"
                             "**************************************\n"
-                            "-------- app launch {} ---------\n"
+                            "--- app launch:  {} \n"
+                            "--- work folder: {} \n"
                             "**************************************\n",
-                            getCurrentTimeHMS());
+                            getCurrentTimeHMS(),
+                            workFolder);
         doLogMessage(text, ANSICodes::bold + ANSICodes::cyan);        
     }
 
