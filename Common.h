@@ -23,6 +23,11 @@
 
 #define SV_DECL_ALIASES(TYPENAME) SV_DECL_PTRS(TYPENAME) SV_DECL_OPT(TYPENAME)
 
+#define DELETE_COPY_CONSTRUCTOR(CLASSNAME) CLASSNAME(const CLASSNAME&) = delete;
+#define DELETE_ASSIGNMENT_OP(CLASSNAME) CLASSNAME& operator=(const CLASSNAME&) = delete;
+
+#define DISABLE_COPY_AND_ASSIGNMENT(CLASSNAME)   DELETE_COPY_CONSTRUCTOR (CLASSNAME)\
+                                                 DELETE_ASSIGNMENT_OP    (CLASSNAME)
 
 SV_DECL_OPT(int)
 SV_DECL_OPT(bool)
@@ -114,6 +119,29 @@ inline double getValue11Clamped(double value, double left, double right)
 inline bool isValidIndex(intOpt index, int itemsCount)
 {
     return index && *index >= 0 && *index < itemsCount;
+}
+
+template<typename Key, typename Value>
+Value* getValuePtr(const std::map<Key, Value> &map, const Key& key)
+{
+    auto found = map.find(key);
+    if (found != map.end()) return &found->second;
+    else return nullptr;
+}
+
+template<typename Key, typename Value>
+const Value* getValue(const std::map<Key, Value> &map, const Key& key)
+{
+    auto found = map.find(key);
+    if (found != map.end()) return &found->second;
+    else return nullptr;
+}
+
+template<typename Key, typename Value>
+const std::optional<Value> getValueOpt(const std::map<Key, Value> &map, const Key& key)
+{
+    if (auto value = getValue(map, key)) return *value;
+    else return {};
 }
 
 /*
