@@ -159,3 +159,14 @@ concept IsStdVector = std::same_as<
 // usage: using TypeInt = getVectorElementType<decltype( std::vector<int>{} )>;
 template <IsStdVector VectorT>
 using getVectorElementType = typename std::decay_t<VectorT>::value_type;
+
+//Appends 'source' to 'destination', moving it. So 'source' is left in undefined state after this.
+template<typename T>
+inline void moveVectorToTheEndOfOther(std::vector<T>& destination, std::vector<T>& source)
+{
+    destination.insert(
+      destination.end(),
+      std::make_move_iterator(source.begin()),
+      std::make_move_iterator(source.end())
+    );
+}
