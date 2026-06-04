@@ -27,20 +27,13 @@ class BasicToken
 {
 public:
     //Makes Symbol token with empty text
-    BasicToken() : BasicToken<BasicTokenType::Symbol>("") {};
+    BasicToken();
 
-    //DataT must be same or be convertible to type in BasicTokenDataVariant for supplied BasicTokenType
-    template<BasicTokenType type, typename DataT>
-    BasicToken(DataT&& arg) 
-    {
-        data.emplace<static_cast<int>(type)>(std::forward<DataT>(arg));
-    }
-
-    static BasicToken makeSymbol            (std::string data = {}){ return BasicToken<BasicTokenType::Symbol>(std::move(data)); }
-    static BasicToken makeString            (std::string data = {}){ return BasicToken<BasicTokenType::String>(std::move(data)); }
-    static BasicToken makeSpecialCharachter (char ch = 0){ return BasicToken<BasicTokenType::SpecialCharachter>(ch); }
-    static BasicToken makeNumberInt         (int number = 0){ return BasicToken<BasicTokenType::NumberInt>(number); }
-    static BasicToken makeNumberDouble      (double number = 0){ return BasicToken<BasicTokenType::NumberDouble>(number); }
+    static BasicToken makeSymbol            (std::string data = {});
+    static BasicToken makeString            (std::string data = {});
+    static BasicToken makeSpecialCharachter (char ch = 0);
+    static BasicToken makeNumberInt         (int number = 0);
+    static BasicToken makeNumberDouble      (double number = 0);
 
     BasicTokenType type() const;
 
@@ -51,8 +44,30 @@ public:
     bool isNumberDouble     () const;
     bool isNumber           () const;
 
+    //If you call it on a wrong type, it will LOG_ERROR and return default value.
+    const std::string&  getSymbolData() const; 
+    const std::string&  getStringData() const; 
+    char                getSpecialCharachterData() const; 
+    int                 getNumberIntData() const; 
+    double              getNumberDoubleData() const; 
+
+    //If you call it on a different type, it will change it.
+    void setSymbolData(std::string data); 
+    void setStringData(std::string data); 
+    void setSpecialCharachterData(char ch); 
+    void setNumberIntData(int num); 
+    void setNumberDoubleData(double num); 
+
+    //no matter whats inside, its converted to string and returned
     std::string dataToString();
-    
+
+private:
+    //DataT must be same or be convertible to type in BasicTokenDataVariant for supplied BasicTokenType
+    template<BasicTokenType type, typename DataT>
+    void setTypeAndData(DataT&& arg) 
+    {
+        data.emplace<static_cast<int>(type)>(std::forward<DataT>(arg));
+    }
 
 private:
     BasicTokenDataVariant data;

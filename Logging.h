@@ -1,6 +1,7 @@
 #pragma once
 #include "Common.h"
 #include <filesystem>
+#include <cassert>
 
 // <internal: these get used by other logging macros>
 #define SV_DO_LOG_FULL(LEVEL, MSG, CATEGORY)  Logger::instance().log(MSG, LEVEL, CATEGORY, __FILE_NAME__, __LINE__);
