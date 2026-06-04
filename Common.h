@@ -48,7 +48,7 @@ inline const T* asConst(T* ptr)
 
 std::string getCurrentTimeHMS();
 
-class ANSICodes
+class ANSICodes //this is to get colored text in terminal
 {
 public:
     // Colors
