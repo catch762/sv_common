@@ -10,7 +10,7 @@
 #include <fstream>
 #include <chrono>
 #include <utility>
-
+#include <cassert>
 
 #define SV_DECL_PTRS(TYPENAME)  using TYPENAME ## Shared          = std::shared_ptr<TYPENAME>;\
                                 using TYPENAME ## Weak            = std::weak_ptr  <TYPENAME>;\
@@ -21,7 +21,9 @@
 
 #define SV_DECL_OPT(TYPENAME)   using TYPENAME ## Opt    = std::optional<TYPENAME>;
 
-#define SV_DECL_ALIASES(TYPENAME) SV_DECL_PTRS(TYPENAME) SV_DECL_OPT(TYPENAME)
+#define SV_DECL_ERR(TYPENAME)   using TYPENAME ## OrError    = std::variant<TYPENAME, std::string /*errorstring*/>;
+
+#define SV_DECL_ALIASES(TYPENAME) SV_DECL_PTRS(TYPENAME) SV_DECL_OPT(TYPENAME) SV_DECL_ERR(TYPENAME)
 
 #define DELETE_COPY_CONSTRUCTOR(CLASSNAME) CLASSNAME(const CLASSNAME&) = delete;
 #define DELETE_ASSIGNMENT_OP(CLASSNAME) CLASSNAME& operator=(const CLASSNAME&) = delete;
@@ -29,10 +31,12 @@
 #define DISABLE_COPY_AND_ASSIGNMENT(CLASSNAME)   DELETE_COPY_CONSTRUCTOR (CLASSNAME)\
                                                  DELETE_ASSIGNMENT_OP    (CLASSNAME)
 
-SV_DECL_OPT(int)
-SV_DECL_OPT(bool)
-SV_DECL_OPT(double)
+SV_DECL_ALIASES(int)
+SV_DECL_ALIASES(bool)
+SV_DECL_ALIASES(double)
+SV_DECL_ALIASES(char)
 
+using StringErrOpt = std::optional<std::string>;
 
 template<typename T> 
 inline T* removeConst(const T* ptr)
@@ -169,4 +173,64 @@ inline void moveVectorToTheEndOfOther(std::vector<T>& destination, std::vector<T
       std::make_move_iterator(source.begin()),
       std::make_move_iterator(source.end())
     );
+}
+
+//Assumes base 10, expects strictly valid number strings, no trailing spacebars or anything - otherwise false is returned.
+//Takes minus symbol into account, ignores plus.
+//
+inline bool stringIsValidIntOrDouble(const std::string& text, bool& isInt)
+{
+    bool hasPoint = false;
+
+    for (int i = 0; i < text.size(); ++i)
+    {
+        const auto ch       = text[i];
+        
+        const auto isDigit  = std::isdigit(ch);
+        const auto isMinus  = ch == '-';
+        const auto isPlus   = ch == '+';
+        const auto isPoint  = ch == '.';
+
+        const auto isFirstChar = i == 0;
+        const auto isLastChar = i == text.size()-1;
+
+        if (isPoint) hasPoint = true;
+
+        const auto isValid = isDigit ||
+                            (isMinus && isFirstChar) ||
+                            (isPlus  && isFirstChar) ||
+                            (isPoint && (!isFirstChar && !isLastChar));
+        if(!isValid) return false;
+    }
+
+    isInt = !hasPoint;
+    return true;
+}
+
+inline std::optional<std::variant<int, double>> convertStringToIntOrDouble(const std::string& text)
+{
+    bool isInt;
+    if (stringIsValidIntOrDouble(text, isInt))
+    {
+        //I assume that now conversion should always work without error.
+        //I cant just use strtod directly - because i dont want fucking "NaN" string to be parsed as
+        //"valid" double containing, you guessed it, NaN. Etc. There are many things like that in strtod implementation.
+
+        char* endptr = nullptr;
+        if (isInt)
+        {
+            auto value        = std::strtol(text.c_str(), &endptr, 10);
+            bool fuckingError = endptr == text.c_str();
+            assert(!fuckingError);
+            return int(value);
+        }
+        else
+        {
+            auto value        = std::strtod(text.c_str(), &endptr);
+            bool fuckingError = endptr == text.c_str();
+            assert(!fuckingError);
+            return value;
+        }
+    }
+    else return {};
 }

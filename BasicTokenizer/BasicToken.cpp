@@ -53,12 +53,17 @@ bool BasicToken::isNumberInt        () const { return type() == BasicTokenType::
 bool BasicToken::isNumberDouble     () const { return type() == BasicTokenType::NumberDouble; }
 bool BasicToken::isNumber           () const { return isNumberInt() || isNumberDouble(); }
 
-std::string BasicToken::dataToString()
+std::string BasicToken::dataToString() const
 {
     return std::visit([](auto &&arg) -> std::string
     {
         return std::format("{}", arg);
     }, data);
+}
+
+std::string BasicToken::info() const
+{
+    return std::format("{}[{}]", basicTokenTypeToString(type()), dataToString());
 }
 
 template<typename T> 
@@ -139,4 +144,36 @@ void BasicToken::setNumberIntData(int num)
 void BasicToken::setNumberDoubleData(double num)
 {
     setTypeAndData<BasicTokenType::NumberDouble>(num);
+}
+
+const char* basicTokenTypeToString(BasicTokenType type)
+{
+    const int entriesCount = int(BasicTokenType::Last) + 1;
+    static const char* names[entriesCount] = {
+        "Symbol",
+        "String",
+        "Char",
+        "Int",
+        "Double",
+    };
+
+    int idx = int(type);
+    if (idx >= 0 && idx < entriesCount) return names[idx];
+    else
+    {
+        SV_ERROR(std::format("Bad BasicTokenType enum value outside range: {}", idx));
+        return nullptr;
+    }
+}
+
+bool BasicToken::operator==(const BasicToken &other) const
+{
+    if (type() != other.type()) return false;
+
+         if (isSymbol           ()) return getSymbolData            () == other.getSymbolData();
+    else if (isString           ()) return getStringData            () == other.getStringData();
+    else if (isSpecialCharachter()) return getSpecialCharachterData () == other.getSpecialCharachterData();
+    else if (isNumberInt        ()) return getNumberIntData         () == other.getNumberIntData();
+    else if (isNumberDouble     ()) return abs(getNumberDoubleData  () - other.getNumberDoubleData()) < 0.00000001;
+    else SV_UNREACHABLE();
 }

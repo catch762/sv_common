@@ -12,6 +12,8 @@ enum class BasicTokenType : int
     Last = NumberDouble
 };
 
+const char* basicTokenTypeToString(BasicTokenType type);
+
 //BasicTokenType is used as index.
 using BasicTokenDataVariant = std::variant<std::string,
                                            std::string,
@@ -59,7 +61,11 @@ public:
     void setNumberDoubleData(double num); 
 
     //no matter whats inside, its converted to string and returned
-    std::string dataToString();
+    std::string dataToString() const;
+
+    std::string info() const;
+
+    bool operator==(const BasicToken& other) const;
 
 private:
     //DataT must be same or be convertible to type in BasicTokenDataVariant for supplied BasicTokenType
@@ -72,3 +78,5 @@ private:
 private:
     BasicTokenDataVariant data;
 };
+
+SV_DECL_STD_FORMATTER(BasicToken, obj.info());
