@@ -27,7 +27,16 @@ public:
     // and starts parsing next one. The break charachter itself is not added as token.
     void enableBreakCharachters(std::string _breakCharachterList = " \t\n");
 
+    // If you dont, all numbers will be simply Symbol tokens.
     void enableParsingNumbers();
+
+    // When this mode is enabled, if a number token is parsed, and then there is one or more  
+    // SpecialCharachter tokens containing minus sign right before it, these minus tokens are
+    // deleted, and if it was [odd number] of those, the number token is multiplied by -1.
+    //
+    // You want it in simple cases where its just numbers, and you DONT want it in more complex 
+    // cases where you expect expressions like 'var - 5' to be parsed (its a higher level parser
+    // job to figure this stuff out then - is it literal negation or minus(a,b) expression or smth else)
     void enableApplyingMinusCharToNumberTokens();
 
 public:
