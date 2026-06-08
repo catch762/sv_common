@@ -5,13 +5,30 @@
 using BasicTokenList = std::list<BasicToken>;
 SV_DECL_ERR(BasicTokenList);
 
+//*********************************************************************************************
+//
+// BasicTokenizer class combines some very basic token parsing functionality that
+// i usually had to rewrite every time for every new small use case.
+//
+// It can parse strings and double/int number literals (only base 10). (see BasicToken.h)
+//
+// It may serve as basic building block for more complicated parsers/tokenizers,
+// or just used as-is for simpler use cases where you just want to parse some numbers or smth.
+//
+//*********************************************************************************************
+
 class BasicTokenizer
 {
+// Construction and setting up BasicTokenizer:
 public:
-    //Enables parsing BasicTokenType::String tokens. You can supply multiple quote symbols.
+    // Default-constructed tokenizer parses any text as single Symbol token containing the text. Thats all.
+    // Enable options below for more functionality.
+    BasicTokenizer() = default;
+
+    // Enables parsing BasicTokenType::String tokens. You can supply multiple quote symbols.
     void enableParsingStringTokens(std::string _quoteCharsList = "\"");
 
-    // Only works if string parsing is enabled.
+    // Must enable string parsing first.
     // Escaping chars is made via backslash (\), and it only works inside a string.
     // Supply pairs like {'n', '\n'}.
     // Dont forget to list quote chars, if you want them (list same char like {'\"', '\"'})
@@ -19,7 +36,8 @@ public:
                                                                                             {'t',  '\t'},
                                                                                             {'\"', '\"'}}); 
 
-    //every encountered char from this list will be saved as BasicTokenType::SpecialCharachter
+    // Every encountered char from this list will be saved as BasicTokenType::SpecialCharachter
+    // If number parsing is on, char '.' may be treated as non-special if it looks like its part of number
     void enableParsingSpecialCharachterTokens(std::string _specialCharachterList);
     
     // Things like space ' ' for example.
@@ -39,6 +57,7 @@ public:
     // job to figure this stuff out then - is it literal negation or minus(a,b) expression or smth else)
     void enableApplyingMinusCharToNumberTokens();
 
+// Actual usage:
 public:
     // Returns either parsed tokens, or string containing error in case of failure
     BasicTokenListOrError parse(const std::string &text); 
@@ -67,6 +86,7 @@ private:
     bool deleteConsequentMinusTokensInTheEndAndReturnIfCountWasOdd();
 
     void resetState();
+
 //Settings that will probably not change once instance is set up:
 private:
     std::string          quoteCharsList;            
@@ -75,6 +95,7 @@ private:
     std::string          breakCharachterList;
     bool                 parsingNumbersEnabled = false;
     bool                 applyingMinusTokensToNumbersEnabled = false;
+
 //Parsing context that is reset on each parse operation:
 private:
     enum class OngoingOperation

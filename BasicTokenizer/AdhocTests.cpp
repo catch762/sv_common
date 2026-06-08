@@ -1,4 +1,4 @@
-#include "Tests.h"
+#include "AdhocTests.h"
 #include "BasicTokenizer.h"
 
 bool tokenListsEqual(const BasicTokenList& expected, const BasicTokenList& actual)
@@ -85,6 +85,14 @@ BasicToken spec(char ch)
 {
     return BasicToken::makeSpecialCharachter(ch);
 }
+BasicToken mkint(int num)
+{
+    return BasicToken::makeNumberInt(num);
+}
+BasicToken mkdouble(double num)
+{
+    return BasicToken::makeNumberDouble(num);
+}
 
 bool testDefaultConstructedTokenizer()
 {
@@ -92,13 +100,8 @@ bool testDefaultConstructedTokenizer()
 
     std::string text = " \" f;e\nwf'\" -- , ";
 
-    if( !compareResultsAndPrintMismatch(BasicTokenList{sym(text)},
-                                        tokenizer.parse(text)) )
-    {
-        return false;
-    }
-
-    return true;
+    return compareResultsAndPrintMismatch(BasicTokenList{sym(text)},
+                                        tokenizer.parse(text));
 }
 
 
@@ -110,13 +113,8 @@ bool testBreakingChars()
 
     std::string text = "all work and\nno play\t";
 
-    if( !compareResultsAndPrintMismatch(BasicTokenList{sym("all"), sym("work"), sym("and"), sym("no"), sym("play")},
-                                        tokenizer.parse(text)) )
-    {
-        return false;
-    }
-
-    return true;
+    return compareResultsAndPrintMismatch(BasicTokenList{sym("all"), sym("work"), sym("and"), sym("no"), sym("play")},
+                                        tokenizer.parse(text));
 }
 
 bool testStrings()
@@ -128,13 +126,8 @@ bool testStrings()
 
     std::string text = R"(all "work and \"no play\" makes" jack)";
 
-    if( !compareResultsAndPrintMismatch(BasicTokenList{sym("all"), str(R"(work and "no play" makes)"), sym("jack")},
-                                        tokenizer.parse(text)) )
-    {
-        return false;
-    }
-
-    return true;
+    return compareResultsAndPrintMismatch(BasicTokenList{sym("all"), str(R"(work and "no play" makes)"), sym("jack")},
+                                        tokenizer.parse(text));
 }
 
 bool testStringsAndSpecChars()
@@ -147,14 +140,31 @@ bool testStringsAndSpecChars()
 
     std::string text = R"(all, all "work, and + \"no play\" makes" jack+dull+boy)";
 
-    if( !compareResultsAndPrintMismatch(BasicTokenList{sym("all"), spec(','), sym("all"), str(R"(work, and + "no play" makes)"),
+    return compareResultsAndPrintMismatch(BasicTokenList{sym("all"), spec(','), sym("all"), str(R"(work, and + "no play" makes)"),
                                                         sym("jack"),spec('+'),sym("dull"),spec('+'),sym("boy")},
-                                        tokenizer.parse(text)) )
-    {
-        return false;
-    }
+                                        tokenizer.parse(text));
+}
 
-    return true;
+bool testNumbersParsing()
+{
+    BasicTokenizer tokenizer;
+    tokenizer.enableBreakCharachters();
+    tokenizer.enableParsingStringTokens("'\"");
+    tokenizer.enableEscapingStringCharachters();
+    tokenizer.enableParsingSpecialCharachterTokens(",+-.");
+    tokenizer.enableParsingNumbers();
+    tokenizer.enableApplyingMinusCharToNumberTokens();
+
+    std::string text = R"(
+            hello 0 -1 10.0 ---5.15 'hi -5.0'
+            aaa.5 5.bbb
+    )";
+    BasicTokenList expected = {
+        sym("hello"), mkint(0), mkint(-1), mkdouble(10.0), mkdouble(-5.15), str("hi -5.0"),
+        sym("aaa"), spec('.'), mkint(5), sym("5.bbb")
+    };
+
+    return compareResultsAndPrintMismatch(expected, tokenizer.parse(text));
 }
 
 void runBasicTokenizerTests()
@@ -170,6 +180,7 @@ void runBasicTokenizerTests()
     SV_RUN_BASIC_TOKENIZER_TEST(testBreakingChars);
     SV_RUN_BASIC_TOKENIZER_TEST(testStrings);
     SV_RUN_BASIC_TOKENIZER_TEST(testStringsAndSpecChars);
+    SV_RUN_BASIC_TOKENIZER_TEST(testNumbersParsing);
 
     auto resultInfo = std::format("BasicTokenizerTests: {} / {} successful.", testsSuccessful, totalTests);
     if (testsSuccessful == totalTests)

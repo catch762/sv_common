@@ -2,11 +2,13 @@
 
 void BasicTokenizer::enableParsingStringTokens(std::string _quoteCharsList)
 {
+    SV_ASSERT(!_quoteCharsList.empty() && "Why do you enableParsingStringTokens() but dont supply a single quote char?");
     quoteCharsList = std::move(_quoteCharsList);
 }
 
 void BasicTokenizer::enableEscapingStringCharachters(std::map<char, char> _escapeCharsTranslationMap)
 {
+    SV_ASSERT(!quoteCharsList.empty() && "call enableParsingStringTokens() first !");
     escapeCharsTranslationMap = std::move(_escapeCharsTranslationMap);
 }
 
@@ -27,6 +29,10 @@ void BasicTokenizer::enableParsingNumbers()
 
 void BasicTokenizer::enableApplyingMinusCharToNumberTokens()
 {
+    SV_ASSERT(specialCharachterList.find('-') != std::string::npos &&
+        "If you want applying minus char tokens to numbers, you must add '-' char to "
+        "enableParsingSpecialCharachterTokens() so that there are minus tokens in the first place");
+
     applyingMinusTokensToNumbersEnabled = true;
 }
 
@@ -116,12 +122,27 @@ BasicTokenizer::CharsParsedCount BasicTokenizer::parseNextBlockWhileParsingSymbo
     SV_ASSERT(currentSymbolIdx < text.size());
     const char ch = text[currentSymbolIdx];
 
+    auto shouldTreatThisSpecialCharAsNormal = [this](char ch)
+    {
+        // The only such condition currently is: if "." is special char, we dont break Symbol token
+        // parsing if there are only digits before it. So its likely a number (its not a given yet)
+        // Potential issue is 123.ZZZ will be parsed as single Symbol token, so '.' special status
+        // will be ignored even though we dont even make a Number token in the end
+        if (parsingNumbersEnabled && ch == '.')
+        {
+            bool allDigits = std::all_of(tokenBeingParsed.begin(), tokenBeingParsed.end(),
+                                         [](char c) { return std::isdigit(c); });
+            return allDigits;
+        }
+        else return false;
+    };
+
     if (isBreakChar(ch))
     {
         finishParsingSymbolToken();
         return 1;
     }
-    else if (isSpecialChar(ch))
+    else if (isSpecialChar(ch) && !shouldTreatThisSpecialCharAsNormal(ch))
     {
         finishParsingSymbolToken();
         tokens.push_back( BasicToken::makeSpecialCharachter(ch) );
