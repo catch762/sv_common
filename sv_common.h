@@ -15,3 +15,4 @@
 #include "Common.h"
 #include "Logging.h"
 #include "Formatters.h"
+#include "CompositeNode.h"
