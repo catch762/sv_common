@@ -23,6 +23,12 @@
 
 #define SV_DECL_ERR(TYPENAME)   using TYPENAME ## OrError    = std::variant<TYPENAME, std::string /*errorstring*/>;
 
+template<typename Whatever>
+inline const std::string* getError(std::variant<Whatever, std::string>& somethingOrError)
+{
+    return std::get_if<std::string>(&somethingOrError);
+}
+
 #define SV_DECL_ALIASES(TYPENAME) SV_DECL_PTRS(TYPENAME) SV_DECL_OPT(TYPENAME) SV_DECL_ERR(TYPENAME)
 
 #define DELETE_COPY_CONSTRUCTOR(CLASSNAME) CLASSNAME(const CLASSNAME&) = delete;
