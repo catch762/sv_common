@@ -1,7 +1,7 @@
 #include "AdhocTests.h"
 #include "BasicTokenizer.h"
 
-bool tokenListsEqual(const BasicTokenList& expected, const BasicTokenList& actual)
+bool tokenListsEqual(const BasicTokenVec& expected, const BasicTokenVec& actual)
 {
     if(expected.size() != actual.size()) return false;
 
@@ -19,9 +19,9 @@ bool tokenListsEqual(const BasicTokenList& expected, const BasicTokenList& actua
     return true;
 }
 
-std::string tokenListToString(const BasicTokenList& list)
+std::string tokenListToString(const BasicTokenVec& list)
 {
-    std::string res = std::format("[{}]BasicTokenList{{ ", list.size());
+    std::string res = std::format("[{}]BasicTokenVec{{ ", list.size());
 
     bool first = true;
     for (const auto& token : list)
@@ -35,13 +35,13 @@ std::string tokenListToString(const BasicTokenList& list)
     return res;
 }
 
-std::string listOrErrorToString(const BasicTokenListOrError &listOrErr)
+std::string listOrErrorToString(const BasicTokenVecOrError &listOrErr)
 {
-    if (listOrErr.index() == 0) return tokenListToString(std::get<BasicTokenList>(listOrErr));
+    if (listOrErr.index() == 0) return tokenListToString(std::get<BasicTokenVec>(listOrErr));
     else return std::get<std::string>(listOrErr);
 }
 
-bool compareTokenListsAndPrintMismatch(const BasicTokenList& expected, const BasicTokenList& actual)
+bool compareTokenListsAndPrintMismatch(const BasicTokenVec& expected, const BasicTokenVec& actual)
 {
     if (!tokenListsEqual(expected, actual))
     {
@@ -52,7 +52,7 @@ bool compareTokenListsAndPrintMismatch(const BasicTokenList& expected, const Bas
     else return true;
 }
 
-bool compareResultsAndPrintMismatch(const BasicTokenListOrError &expected, const BasicTokenListOrError &actual)
+bool compareResultsAndPrintMismatch(const BasicTokenVecOrError &expected, const BasicTokenVecOrError &actual)
 {
     const bool expectedIsErr = expected.index() == 1;
     const bool actualIsErr = actual.index() == 1;
@@ -63,7 +63,7 @@ bool compareResultsAndPrintMismatch(const BasicTokenListOrError &expected, const
     }
     else if (!expectedIsErr && !actualIsErr)
     {
-        return compareTokenListsAndPrintMismatch(std::get<BasicTokenList>(expected), std::get<BasicTokenList>(actual));
+        return compareTokenListsAndPrintMismatch(std::get<BasicTokenVec>(expected), std::get<BasicTokenVec>(actual));
     }
     else
     {
@@ -100,7 +100,7 @@ bool testDefaultConstructedTokenizer()
 
     std::string text = " \" f;e\nwf'\" -- , ";
 
-    return compareResultsAndPrintMismatch(BasicTokenList{sym(text)},
+    return compareResultsAndPrintMismatch(BasicTokenVec{sym(text)},
                                         tokenizer.parse(text));
 }
 
@@ -113,7 +113,7 @@ bool testBreakingChars()
 
     std::string text = "all work and\nno play\t";
 
-    return compareResultsAndPrintMismatch(BasicTokenList{sym("all"), sym("work"), sym("and"), sym("no"), sym("play")},
+    return compareResultsAndPrintMismatch(BasicTokenVec{sym("all"), sym("work"), sym("and"), sym("no"), sym("play")},
                                         tokenizer.parse(text));
 }
 
@@ -126,7 +126,7 @@ bool testStrings()
 
     std::string text = R"(all "work and \"no play\" makes" jack)";
 
-    return compareResultsAndPrintMismatch(BasicTokenList{sym("all"), str(R"(work and "no play" makes)"), sym("jack")},
+    return compareResultsAndPrintMismatch(BasicTokenVec{sym("all"), str(R"(work and "no play" makes)"), sym("jack")},
                                         tokenizer.parse(text));
 }
 
@@ -140,7 +140,7 @@ bool testStringsAndSpecChars()
 
     std::string text = R"(all, all "work, and + \"no play\" makes" jack+dull+boy)";
 
-    return compareResultsAndPrintMismatch(BasicTokenList{sym("all"), spec(','), sym("all"), str(R"(work, and + "no play" makes)"),
+    return compareResultsAndPrintMismatch(BasicTokenVec{sym("all"), spec(','), sym("all"), str(R"(work, and + "no play" makes)"),
                                                         sym("jack"),spec('+'),sym("dull"),spec('+'),sym("boy")},
                                         tokenizer.parse(text));
 }
@@ -159,7 +159,7 @@ bool testNumbersParsing()
             hello 0 -1 10.0 ---5.15 'hi -5.0'
             aaa.5 5.bbb
     )";
-    BasicTokenList expected = {
+    BasicTokenVec expected = {
         sym("hello"), mkint(0), mkint(-1), mkdouble(10.0), mkdouble(-5.15), str("hi -5.0"),
         sym("aaa"), spec('.'), mkint(5), sym("5.bbb")
     };

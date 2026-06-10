@@ -36,7 +36,7 @@ void BasicTokenizer::enableApplyingMinusCharToNumberTokens()
     applyingMinusTokensToNumbersEnabled = true;
 }
 
-BasicTokenListOrError BasicTokenizer::parse(const std::string &text)
+BasicTokenVecOrError BasicTokenizer::parse(const std::string &text)
 {
     if(text.empty())
     {
@@ -69,7 +69,7 @@ BasicTokenListOrError BasicTokenizer::parse(const std::string &text)
         return std::format("At the end of parsed text, encountered error: {}", *handleEndError);
     }
 
-    BasicTokenList tokensToReturn = std::move(tokens);
+    BasicTokenVec tokensToReturn = std::move(tokens);
     resetState();
     return std::move(tokensToReturn);
 }

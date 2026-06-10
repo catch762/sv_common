@@ -2,8 +2,8 @@
 #include "BasicToken.h"
 #include <list>
 
-using BasicTokenList = std::list<BasicToken>;
-SV_DECL_ERR(BasicTokenList);
+using BasicTokenVec = std::vector<BasicToken>;
+SV_DECL_ERR(BasicTokenVec);
 
 //*********************************************************************************************
 //
@@ -60,7 +60,7 @@ public:
 // Actual usage:
 public:
     // Returns either parsed tokens, or string containing error in case of failure
-    BasicTokenListOrError parse(const std::string &text); 
+    BasicTokenVecOrError parse(const std::string &text); 
 
 
 private:
@@ -107,5 +107,5 @@ private:
 
     std::string tokenBeingParsed;
 
-    BasicTokenList tokens;
+    BasicTokenVec tokens;
 };

@@ -1,6 +1,7 @@
 #pragma once
 #include <format>
 
+
 //***************************************************************
 // Example usage:
 //
@@ -75,3 +76,27 @@ struct std::formatter<std::vector<T>> : std::formatter<T> {
 //****************
 // [ /Containers ]
 //****************
+
+template <typename A, typename B>
+struct std::formatter<std::pair<A, B>> {
+
+    std::string_view left = "[";
+    std::string_view right = "]";
+    std::string_view sep = ", ";
+
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
+    template <typename FormatCtx>
+    auto format(const std::pair<A, B>& p, FormatCtx& fctx) const
+    {
+        auto out = fctx.out();
+
+        for (char c : left) *out++ = c;
+        out = std::formatter<A>{}.format(p.first, fctx);
+        for (char c : sep) *out++ = c;
+        out = std::formatter<B>{}.format(p.second, fctx);
+        for (char c : right) *out++ = c;
+
+        return out;
+    }
+};

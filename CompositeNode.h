@@ -25,6 +25,11 @@ public:
     {
     }
 
+    static CompositeNode<LeafType> makeComposite(Children children = {})
+    {
+        return CompositeNode<LeafType>(std::move(children));
+    }
+
     bool isLeaf() const
     {
         return std::holds_alternative<LeafType>(data);
@@ -52,6 +57,44 @@ public:
         return std::get_if<Children>(&data);
     }
 
+    std::string toString() const
+    {
+        return isLeaf() ? toStringInternal() : "\n" + toStringInternal();
+    }
+
+    std::string toStringInternal(int level = 0) const
+    {
+        auto ind = std::string((level) * 3, ' ');
+        if (isLeaf())
+        {
+            return ind + std::format("{}", *getLeafValue());
+        }
+        else if (auto* children = getChildren())
+        {
+            std::string res = ind + "{\n";
+            for (int i = 0; i < children->size(); ++i)
+            {
+                res += (*children)[i].toStringInternal(level + 1);
+                if (i != children->size()-1) res += ",";
+                res += "\n";
+            }
+            res += ind + "}";
+            return res;
+        }
+        else SV_UNREACHABLE();
+    }
+
 private:
     std::variant<LeafType, Children> data;
+};
+
+
+template <typename LeafType>
+struct std::formatter<CompositeNode<LeafType>>
+{
+    constexpr auto parse(std::format_parse_context& ctx) { return ctx.begin(); }
+
+    auto format(const CompositeNode<LeafType>& obj, std::format_context& ctx) const {
+        return std::format_to(ctx.out(), "{}", obj.toString() );
+    }
 };

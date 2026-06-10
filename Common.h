@@ -131,6 +131,23 @@ inline bool isValidIndex(intOpt index, int itemsCount)
     return index && *index >= 0 && *index < itemsCount;
 }
 
+inline std::string makeInvalidIndexError(intOpt index, int itemsCount, const char* contextString = nullptr)
+{
+    return std::format("[{}]: invalid index [{}] to access [{}] items",
+                        contextString ? contextString : "",
+                        index ? std::to_string(*index) : "nullopt",
+                        itemsCount);
+}
+
+inline StringErrOpt getErrorIfInvalidIndex(intOpt index, int itemsCount, const char* contextString = nullptr)
+{
+    if (isValidIndex(index, itemsCount))
+    {
+        return {};
+    }
+    else return makeInvalidIndexError(index, itemsCount, contextString);
+}
+
 template<typename Key, typename Value>
 Value* getValuePtr(const std::map<Key, Value> &map, const Key& key)
 {
