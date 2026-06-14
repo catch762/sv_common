@@ -57,12 +57,12 @@ public:
         return std::get_if<Children>(&data);
     }
 
-    std::string toString() const
+    /*std::string toString() const
     {
         return isLeaf() ? toStringInternal() : "\n" + toStringInternal();
-    }
+    }*/
 
-    std::string toStringInternal(int level = 0) const
+    std::string toString(int level = 0) const
     {
         auto ind = std::string((level) * 3, ' ');
         if (isLeaf())
@@ -74,7 +74,7 @@ public:
             std::string res = ind + "{\n";
             for (int i = 0; i < children->size(); ++i)
             {
-                res += (*children)[i].toStringInternal(level + 1);
+                res += (*children)[i].toString(level + 1);
                 if (i != children->size()-1) res += ",";
                 res += "\n";
             }
@@ -82,6 +82,35 @@ public:
             return res;
         }
         else SV_UNREACHABLE();
+    }
+
+    //assumes u can compare LeafValue's
+    bool operator==(const CompositeNode& other) const
+    {
+        if (isLeaf() != other.isLeaf()) return false;
+
+        if (isLeaf())
+        {
+            return *getLeafValue() == *other.getLeafValue();
+        }
+        else
+        {
+            const auto* thisChildren  = getChildren();
+            const auto* otherChildren = other.getChildren();
+
+            if (thisChildren->size() != otherChildren->size()) return false;
+
+            for (int i = 0; i < thisChildren->size(); ++i)
+            {
+                const auto &thisChild  = (*thisChildren)[i];
+                const auto &otherChild = (*otherChildren)[i];
+
+                if (thisChild != otherChild) return false;
+            }
+
+            //all children equal, so
+            return true;
+        }
     }
 
 private:

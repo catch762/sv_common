@@ -177,3 +177,27 @@ bool BasicToken::operator==(const BasicToken &other) const
     else if (isNumberDouble     ()) return abs(getNumberDoubleData  () - other.getNumberDoubleData()) < 0.00000001;
     else SV_UNREACHABLE();
 }
+
+namespace basictoken_helpers 
+{
+BasicToken sym(std::string str)
+{
+    return BasicToken::makeSymbol(std::move(str));
+}
+BasicToken str(std::string str)
+{
+    return BasicToken::makeString(std::move(str));
+}
+BasicToken spec(char ch)
+{
+    return BasicToken::makeSpecialCharachter(ch);
+}
+BasicToken mkint(int num)
+{
+    return BasicToken::makeNumberInt(num);
+}
+BasicToken mkdouble(double num)
+{
+    return BasicToken::makeNumberDouble(num);
+}
+};

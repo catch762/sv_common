@@ -24,9 +24,15 @@
 #define SV_DECL_ERR(TYPENAME)   using TYPENAME ## OrError    = std::variant<TYPENAME, std::string /*errorstring*/>;
 
 template<typename Whatever>
-inline const std::string* getError(std::variant<Whatever, std::string>& somethingOrError)
+inline const std::string* getError(const std::variant<Whatever, std::string>& somethingOrError)
 {
     return std::get_if<std::string>(&somethingOrError);
+}
+
+template<typename WhateverVariant>
+inline std::string variantToString(const WhateverVariant& variantOfWhatever)
+{
+    return std::visit([](auto &&val){return std::format("{}", val);}, variantOfWhatever);
 }
 
 #define SV_DECL_ALIASES(TYPENAME) SV_DECL_PTRS(TYPENAME) SV_DECL_OPT(TYPENAME) SV_DECL_ERR(TYPENAME)

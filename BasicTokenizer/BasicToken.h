@@ -80,3 +80,12 @@ private:
 };
 
 SV_DECL_STD_FORMATTER(BasicToken, obj.info());
+
+namespace basictoken_helpers //super short aliases, mostly to tidy up tests
+{
+BasicToken sym(std::string str);
+BasicToken str(std::string str);
+BasicToken spec(char ch);
+BasicToken mkint(int num);
+BasicToken mkdouble(double num);
+};

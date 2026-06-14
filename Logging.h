@@ -168,7 +168,7 @@ private:
 
     void printMessageToTerminal(const std::string &msg, const std::string &ansiColorCode)
     {
-        std::cout << ansiColorCode + msg + ANSICodes::reset << std::endl;
+        std::cout << ANSICodes::reset + ansiColorCode + msg + ANSICodes::reset << std::endl;
     }
 
     void appendMessageToFile(const std::string &msg)

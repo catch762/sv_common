@@ -1,6 +1,10 @@
 #include "AdhocTests.h"
 #include "BasicTokenizer.h"
 
+using namespace basictoken_helpers;
+
+
+
 bool tokenListsEqual(const BasicTokenVec& expected, const BasicTokenVec& actual)
 {
     if(expected.size() != actual.size()) return false;
@@ -73,26 +77,6 @@ bool compareResultsAndPrintMismatch(const BasicTokenVecOrError &expected, const 
     }
 }
 
-BasicToken sym(std::string str)
-{
-    return BasicToken::makeSymbol(std::move(str));
-}
-BasicToken str(std::string str)
-{
-    return BasicToken::makeString(std::move(str));
-}
-BasicToken spec(char ch)
-{
-    return BasicToken::makeSpecialCharachter(ch);
-}
-BasicToken mkint(int num)
-{
-    return BasicToken::makeNumberInt(num);
-}
-BasicToken mkdouble(double num)
-{
-    return BasicToken::makeNumberDouble(num);
-}
 
 bool testDefaultConstructedTokenizer()
 {
