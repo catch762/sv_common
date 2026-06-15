@@ -17,6 +17,11 @@ SV_DECL_ERR(BasicTokenVec);
 //
 //*********************************************************************************************
 
+//******************************************
+// Todo, potentially:
+// -    breaking the end of line with \
+//      for both strings and normal
+//******************************************
 class BasicTokenizer
 {
 // Construction and setting up BasicTokenizer:

@@ -13,14 +13,14 @@ struct CompositeNode
 public:
     using Children = std::vector<CompositeNode>;
 
-    CompositeNode() = delete;
+    //CompositeNode() = delete;
 
     CompositeNode(LeafType leafValue) 
         : data(std::move(leafValue))
     {
     }
 
-    CompositeNode(Children children)
+    CompositeNode(Children children = {})
         : data(std::move(children))
     {
     }
