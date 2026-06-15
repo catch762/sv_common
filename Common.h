@@ -11,6 +11,7 @@
 #include <chrono>
 #include <utility>
 #include <cassert>
+#include <cmath>
 
 #define SV_DECL_PTRS(TYPENAME)  using TYPENAME ## Shared          = std::shared_ptr<TYPENAME>;\
                                 using TYPENAME ## Weak            = std::weak_ptr  <TYPENAME>;\
@@ -202,6 +203,35 @@ inline void moveVectorToTheEndOfOther(std::vector<T>& destination, std::vector<T
       std::make_move_iterator(source.begin()),
       std::make_move_iterator(source.end())
     );
+}
+
+//Accepts floats and doubles
+template <std::floating_point T, std::floating_point U>
+constexpr bool fuzzyEquals(T _a, U _b)
+{
+    using C = std::common_type_t<T, U>; //returns bigger type
+    const C a = static_cast<C>(_a);
+    const C b = static_cast<C>(_b);
+
+    //Two questionable checks:
+    if (std::isnan(a) || std::isnan(b)) return false; 
+    if (std::isinf(a) || std::isinf(b)) return a == b; //there are +inf and -inf
+
+    return std::abs(a - b) < std::numeric_limits<C>::epsilon() * C(100);
+}
+
+//accepts integers, floats, doubles.
+//uses fuzzy comparing when needed
+template <typename T, typename U>
+    requires (std::integral<T> || std::floating_point<T>) &&
+             (std::integral<U> || std::floating_point<U>)
+constexpr bool arithmeticEquals(T a, U b)
+{
+    if constexpr (std::integral<T> && std::integral<U>)
+        return a == b;
+    else
+        return fuzzyEquals(static_cast<std::common_type_t<T, U>>(a),
+                           static_cast<std::common_type_t<T, U>>(b));
 }
 
 //Assumes base 10, expects strictly valid number strings, no trailing spacebars or anything - otherwise false is returned.

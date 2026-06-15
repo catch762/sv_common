@@ -51,7 +51,11 @@ public:
     const std::string&  getStringData() const; 
     char                getSpecialCharachterData() const; 
     int                 getNumberIntData() const; 
-    double              getNumberDoubleData() const; 
+    double              getNumberDoubleData() const;
+
+    //If its NumberDouble its fine, if NumberInt, int data gets casted to double.
+    //Anything else is error which will be logged and default value returned.
+    double              getNumberDataAsDouble() const;
 
     //If you call it on a different type, it will change it.
     void setSymbolData(std::string data); 

@@ -1,5 +1,42 @@
 #include "BasicToken.h"
 
+//some helpers:
+
+const char* basicTokenTypeToString(BasicTokenType type)
+{
+    const int entriesCount = int(BasicTokenType::Last) + 1;
+    static const char* names[entriesCount] = {
+        "Symbol",
+        "String",
+        "Char",
+        "Int",
+        "Double",
+    };
+
+    int idx = int(type);
+    if (idx >= 0 && idx < entriesCount) return names[idx];
+    else
+    {
+        SV_ERROR(std::format("Bad BasicTokenType enum value outside range: {}", idx));
+        return nullptr;
+    }
+}
+
+template<typename T> 
+const T& returnDefaultValAndLogError(BasicTokenType expectedType, BasicTokenType actualType)
+{
+    SV_ERROR(std::format("Trying to get data from token expecting it to be type [{}] but its [{}]",
+                         basicTokenTypeToString(expectedType), basicTokenTypeToString(actualType) ));
+
+    static const T defaultVal = {};
+    return defaultVal;
+}
+
+
+
+
+
+
 BasicToken::BasicToken()
 {
     setSymbolData("");
@@ -66,15 +103,7 @@ std::string BasicToken::info() const
     return std::format("{}[{}]", basicTokenTypeToString(type()), dataToString());
 }
 
-template<typename T> 
-const T& returnDefaultValAndLogError(BasicTokenType expectedType, BasicTokenType actualType)
-{
-    SV_ERROR(std::format("Trying to get data from token expecting it to be type [{}] but its [{}]",
-                         int(expectedType), int(actualType) ));
 
-    static const T defaultVal = {};
-    return defaultVal;
-}
 
 const std::string &BasicToken::getSymbolData() const
 {
@@ -121,6 +150,17 @@ double BasicToken::getNumberDoubleData() const
     else return returnDefaultValAndLogError<double>(BasicTokenType::NumberDouble, type());
 }
 
+double BasicToken::getNumberDataAsDouble() const
+{
+         if (isNumberDouble ()) return getNumberDoubleData();
+    else if (isNumberInt    ()) return double( getNumberIntData() );
+    else
+    {
+        SV_ERROR(std::format("Cant getNumberDataAsDouble() because token isnt number, its {}", basicTokenTypeToString(type())));
+        return {};
+    }
+}
+
 void BasicToken::setSymbolData(std::string data)
 {
     setTypeAndData<BasicTokenType::Symbol>(std::move(data));
@@ -146,25 +186,7 @@ void BasicToken::setNumberDoubleData(double num)
     setTypeAndData<BasicTokenType::NumberDouble>(num);
 }
 
-const char* basicTokenTypeToString(BasicTokenType type)
-{
-    const int entriesCount = int(BasicTokenType::Last) + 1;
-    static const char* names[entriesCount] = {
-        "Symbol",
-        "String",
-        "Char",
-        "Int",
-        "Double",
-    };
 
-    int idx = int(type);
-    if (idx >= 0 && idx < entriesCount) return names[idx];
-    else
-    {
-        SV_ERROR(std::format("Bad BasicTokenType enum value outside range: {}", idx));
-        return nullptr;
-    }
-}
 
 bool BasicToken::operator==(const BasicToken &other) const
 {

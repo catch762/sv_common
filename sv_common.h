@@ -16,3 +16,4 @@
 #include "Logging.h"
 #include "Formatters.h"
 #include "CompositeNode.h"
+#include "StlHelpers.h"
