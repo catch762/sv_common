@@ -95,7 +95,7 @@ struct std::formatter<std::set<T>> : std::formatter<T> {
         *out++ = left;
 
         int i = 0;
-        for (const auto T& val : set)
+        for (const auto& val : set)
         {
             out = std::formatter<T>::format(val, fctx);
             if (i < set.size() - 1)

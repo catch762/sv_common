@@ -49,6 +49,9 @@ SV_DECL_ALIASES(bool)
 SV_DECL_ALIASES(double)
 SV_DECL_ALIASES(char)
 
+using StringSet = std::set<std::string>;
+SV_DECL_ALIASES(StringSet);
+
 using StringErrOpt = std::optional<std::string>;
 
 template<typename T> 
