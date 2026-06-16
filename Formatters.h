@@ -42,6 +42,8 @@
 // thats a TODO.
 //******************************************************************
 
+//todo remove inheritance lol
+
 template <typename T>
 struct std::formatter<std::vector<T>> : std::formatter<T> {
 
@@ -67,6 +69,41 @@ struct std::formatter<std::vector<T>> : std::formatter<T> {
             {
                 out = sep;
             }
+        }
+        *out++ = right;
+        return out;
+    }
+};
+
+template <typename T>
+struct std::formatter<std::set<T>> : std::formatter<T> {
+
+    std::string_view left = "[ ";
+    std::string_view right = " ]";
+    std::string_view sep = ", ";
+
+    constexpr auto parse(format_parse_context& ctx)
+    {
+        return ctx.begin();
+    }
+
+    template <typename FormatCtx>
+    auto format(const std::set<T>& set, FormatCtx& fctx) const
+    {
+        auto out = fctx.out();
+
+        *out++ = left;
+
+        int i = 0;
+        for (const auto T& val : set)
+        {
+            out = std::formatter<T>::format(val, fctx);
+            if (i < set.size() - 1)
+            {
+                out = sep;
+            }
+
+            i++;
         }
         *out++ = right;
         return out;

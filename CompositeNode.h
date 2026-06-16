@@ -11,6 +11,7 @@ template<typename LeafType>
 struct CompositeNode
 {
 public:
+    using CompositeNodeT = CompositeNode<LeafType>;
     using Children = std::vector<CompositeNode>;
 
     //CompositeNode() = delete;
@@ -111,6 +112,28 @@ public:
             //all children equal, so
             return true;
         }
+    }
+
+    //Visits all nodes recoursively. Returns success if all visitor() calls returned true.
+    //If even one visitor() returns false, everything stops and false is returned.
+    bool visit(const std::function<bool(CompositeNodeT& node)> &visitor)
+    {
+        //note that this call may change this node type (leaf/comp)
+        if(!visitor(*this)) return false;
+
+        if (isLeaf())
+        {
+            return true;
+        }
+        else
+        {
+            for(auto& child : *getChildren())
+            {
+                if (!visitor(child)) return false;
+            }
+
+            return true;
+        } 
     }
 
 private:
