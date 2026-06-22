@@ -12,6 +12,12 @@
 #include <utility>
 #include <cassert>
 #include <cmath>
+#include <variant>
+#include <string_view>
+#include <algorithm>
+
+// The MSVC Fix: Wrap the macro call in an outer expansion macro to unpack __VA_ARGS__
+#define SV_EXP(x) x
 
 #define SV_DECL_PTRS(TYPENAME)  using TYPENAME ## Shared          = std::shared_ptr<TYPENAME>;\
                                 using TYPENAME ## Weak            = std::weak_ptr  <TYPENAME>;\
@@ -72,24 +78,24 @@ class ANSICodes //this is to get colored text in terminal
 {
 public:
     // Colors
-    static inline constexpr std::string black   = "\033[30m";
-    static inline constexpr std::string red     = "\033[31m";
-    static inline constexpr std::string orange  = "\033[38;5;208m";
-    static inline constexpr std::string green   = "\033[32m";
-    static inline constexpr std::string yellow  = "\033[33m";
-    static inline constexpr std::string blue    = "\033[34m";
-    static inline constexpr std::string magenta = "\033[35m";
-    static inline constexpr std::string cyan    = "\033[36m";
-    static inline constexpr std::string white   = "\033[37m";
+    static inline constexpr std::string_view black   = "\033[30m";
+    static inline constexpr std::string_view red     = "\033[31m";
+    static inline constexpr std::string_view orange  = "\033[38;5;208m";
+    static inline constexpr std::string_view green   = "\033[32m";
+    static inline constexpr std::string_view yellow  = "\033[33m";
+    static inline constexpr std::string_view blue    = "\033[34m";
+    static inline constexpr std::string_view magenta = "\033[35m";
+    static inline constexpr std::string_view cyan    = "\033[36m";
+    static inline constexpr std::string_view white   = "\033[37m";
 
     // Styles
-    static inline constexpr std::string bold      = "\033[1m";
-    static inline constexpr std::string dim       = "\033[2m";
-    static inline constexpr std::string italic    = "\033[3m";
-    static inline constexpr std::string underline = "\033[4m";
-    static inline constexpr std::string blink     = "\033[5m";
-    static inline constexpr std::string reset     = "\033[0m";
-    static inline constexpr std::string none      = "";
+    static inline constexpr std::string_view bold      = "\033[1m";
+    static inline constexpr std::string_view dim       = "\033[2m";
+    static inline constexpr std::string_view italic    = "\033[3m";
+    static inline constexpr std::string_view underline = "\033[4m";
+    static inline constexpr std::string_view blink     = "\033[5m";
+    static inline constexpr std::string_view reset     = "\033[0m";
+    static inline constexpr std::string_view none      = "";
 
     static inline std::string rgb(uint8_t r, uint8_t g, uint8_t b)
     {

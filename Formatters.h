@@ -1,6 +1,10 @@
 #pragma once
 #include <format>
 
+template <typename OutputIt>
+constexpr OutputIt writeStr(OutputIt out, std::string_view str) {
+    return std::ranges::copy(str, out).out;
+}
 
 //***************************************************************
 // Example usage:
@@ -61,16 +65,17 @@ struct std::formatter<std::vector<T>> : std::formatter<T> {
     {
         auto out = fctx.out();
 
-        *out++ = left;
+        out = writeStr(out, left);
+
         for (size_t i = 0; i < vec.size(); ++i)
         {
             out = std::formatter<T>::format(vec[i], fctx);
             if (i < vec.size() - 1)
             {
-                out = sep;
+                out = writeStr(out, sep);
             }
         }
-        *out++ = right;
+        out = writeStr(out, right);
         return out;
     }
 };

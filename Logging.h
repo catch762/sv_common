@@ -3,8 +3,25 @@
 #include <filesystem>
 #include <cassert>
 
+constexpr std::string_view getJustFileName(std::string_view fullPath)
+{
+    size_t last_slash = fullPath.find_last_of("\\/");
+    if (last_slash == std::string_view::npos) {
+        return fullPath;
+    }
+    return fullPath.substr(last_slash + 1);
+}
+
+#if defined(__FILE_NAME__)
+    //Clang, GCC
+    #define SV_FILE_NAME __FILE_NAME__
+#else
+    //MSVC
+    #define SV_FILE_NAME getJustFileName(__FILE__)
+#endif
+
 // <internal: these get used by other logging macros>
-#define SV_DO_LOG_FULL(LEVEL, MSG, CATEGORY)  Logger::instance().log(MSG, LEVEL, CATEGORY, __FILE_NAME__, __LINE__);
+#define SV_DO_LOG_FULL(LEVEL, MSG, CATEGORY)  Logger::instance().log(MSG, LEVEL, CATEGORY, SV_FILE_NAME, __LINE__);
 #define SV_DO_LOG_BASE(LEVEL, MSG)            SV_DO_LOG_FULL(LEVEL, MSG, std::string())
 #define SV_GET_LOG_MACRO_WITH_1_OR_2_ARGS(_1, _2, NAME, ...) NAME
 
@@ -18,9 +35,9 @@
 
 
 //These 3 macros take following arguments: ("MSG") or ("CATEGORY", "MSG").  
-#define SV_LOG(...)     SV_GET_LOG_MACRO_WITH_1_OR_2_ARGS(__VA_ARGS__, SV_LOG2,     SV_LOG1)    (__VA_ARGS__)
-#define SV_WARN(...)    SV_GET_LOG_MACRO_WITH_1_OR_2_ARGS(__VA_ARGS__, SV_WARN2,    SV_WARN1)   (__VA_ARGS__)
-#define SV_ERROR(...)   SV_GET_LOG_MACRO_WITH_1_OR_2_ARGS(__VA_ARGS__, SV_ERROR2,   SV_ERROR1)  (__VA_ARGS__)
+#define SV_LOG(...)     SV_EXP(SV_GET_LOG_MACRO_WITH_1_OR_2_ARGS(__VA_ARGS__, SV_LOG2,     SV_LOG1)    (__VA_ARGS__))
+#define SV_WARN(...)    SV_EXP(SV_GET_LOG_MACRO_WITH_1_OR_2_ARGS(__VA_ARGS__, SV_WARN2,    SV_WARN1)   (__VA_ARGS__))
+#define SV_ERROR(...)   SV_EXP(SV_GET_LOG_MACRO_WITH_1_OR_2_ARGS(__VA_ARGS__, SV_ERROR2,   SV_ERROR1)  (__VA_ARGS__))
 
 //basic assert is fine, but i really need to also print assert to logs, so:
 #define SV_ASSERT(COND) { if(!static_cast<bool>(COND)) {\
@@ -62,7 +79,8 @@ public:
         return logger;
     }
 
-    void log(const std::string &msg, Level level, const std::string &category, const std::string &FILE, int LINE)
+    //todo this should ve been string view
+    void log(const std::string &msg, Level level, const std::string &category, const std::string_view FILE, int LINE)
     {
         bool isAllowed      = levelIsAllowed(level) && categoryIsAllowed(category);
         bool isForceAllowed = level == Level::Assert;
@@ -73,7 +91,7 @@ public:
 
         auto finalText = std::format(R"({}, {} {}{}: {})", FILE, std::to_string(LINE), levelData.name, cat, msg);
 
-        doLogMessage(finalText, levelData.ansiColor);
+        doLogMessage(finalText, std::string(levelData.ansiColor));
     }
 
     void doLogMessage(const std::string &finalMsg, const std::string &ansiColor)
@@ -97,13 +115,13 @@ public:
                             "**************************************\n",
                             getCurrentTimeHMS(),
                             workFolder);
-        doLogMessage(text, ANSICodes::bold + ANSICodes::cyan);        
+        doLogMessage(text, std::format("{}{}", ANSICodes::bold, ANSICodes::cyan));
     }
 
     void logAppExitMessage(int returnCode)
     {
         auto text = std::format("-------- app exited with {} ---------", returnCode);
-        doLogMessage(text, ANSICodes::bold + ANSICodes::cyan);
+        doLogMessage(text, std::format("{}{}", ANSICodes::bold, ANSICodes::cyan));
     }
 
     // e.g. setting it to Level::Warn will completely filter out Level::Info
@@ -142,7 +160,7 @@ private:
     struct LevelData
     {
         std::string name;
-        std::string ansiColor;
+        std::string_view ansiColor;
     };
     const LevelData& getLevelData(Level level)
     {
@@ -168,7 +186,7 @@ private:
 
     void printMessageToTerminal(const std::string &msg, const std::string &ansiColorCode)
     {
-        std::cout << ANSICodes::reset + ansiColorCode + msg + ANSICodes::reset << std::endl;
+        std::cout << ANSICodes::reset << ansiColorCode << msg << ANSICodes::reset << std::endl;
     }
 
     void appendMessageToFile(const std::string &msg)
