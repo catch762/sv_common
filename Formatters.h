@@ -2,8 +2,8 @@
 #include <format>
 
 template <typename OutputIt>
-constexpr OutputIt writeStr(OutputIt out, std::string_view str) {
-    return std::ranges::copy(str, out).out;
+void writeStr(OutputIt& out, std::string_view str) {
+    out = std::ranges::copy(str, out).out;
 }
 
 //***************************************************************
@@ -65,17 +65,17 @@ struct std::formatter<std::vector<T>> : std::formatter<T> {
     {
         auto out = fctx.out();
 
-        out = writeStr(out, left);
+        writeStr(out, left);
 
         for (size_t i = 0; i < vec.size(); ++i)
         {
             out = std::formatter<T>::format(vec[i], fctx);
             if (i < vec.size() - 1)
             {
-                out = writeStr(out, sep);
+                writeStr(out, sep);
             }
         }
-        out = writeStr(out, right);
+        writeStr(out, right);
         return out;
     }
 };
@@ -97,7 +97,7 @@ struct std::formatter<std::set<T>> : std::formatter<T> {
     {
         auto out = fctx.out();
 
-        *out++ = left;
+        writeStr(out, left);
 
         int i = 0;
         for (const auto& val : set)
@@ -105,12 +105,12 @@ struct std::formatter<std::set<T>> : std::formatter<T> {
             out = std::formatter<T>::format(val, fctx);
             if (i < set.size() - 1)
             {
-                out = sep;
+                writeStr(out, sep);
             }
 
             i++;
         }
-        *out++ = right;
+        writeStr(out, right);
         return out;
     }
 };
