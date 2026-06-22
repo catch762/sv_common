@@ -55,7 +55,7 @@ constexpr std::string_view getJustFileName(std::string_view fullPath)
     #define SV_UNREACHABLE_CALL()
 #endif
 // </internal>
-#define SV_UNREACHABLE() SV_ASSERT(false && "Unreachable reached!"); SV_UNREACHABLE_CALL();
+#define SV_UNREACHABLE() {SV_ASSERT(false && "Unreachable reached!"); SV_UNREACHABLE_CALL();}
 
 
 class Logger
