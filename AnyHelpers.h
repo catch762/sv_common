@@ -1,10 +1,10 @@
 #pragma once
 #include <any>
 #include <typeindex>
-#include "Formatters.h"
 #include <optional>
-#include "TypeMeta/TypeMeta.h"
 #include "Common.h"
+#include "Formatters.h"
+#include "TypeMeta/TypeMeta.h"
 
 using anyOpt = std::optional<std::any>;
 
@@ -17,6 +17,12 @@ inline std::type_index typeIndex(const std::any& any)
 inline const char* anyTypeName(const std::any& any)
 {
 	return TypeNames::getTypeName(typeIndex(any));
+}
+
+//this will return true for two empty std::any's
+inline bool anyHoldSameType(const std::any& first, const std::any& second)
+{
+	return typeIndex(first) == typeIndex(second);
 }
 
 inline std::string anyInfo(const std::any& any)
