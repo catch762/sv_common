@@ -2,9 +2,15 @@
 #include <typeindex>
 #include "doctest/doctest.h"
 #include <string>
-#include "../Logging.h"
+#include "../Common.h"
 
-//works out of the box, but may be ugly and barely readable. Used as fallback.
+template <typename T>
+std::type_index typeIndex()
+{
+	return std::type_index(typeid(T));
+}
+
+//works out of the box, but may be ugly and barely readable. Used as fallback only.
 template <typename T>
 constexpr const char* mangledTypeName()
 {
@@ -12,43 +18,72 @@ constexpr const char* mangledTypeName()
 }
 
 
-//later use std::type_index, int is for transition
-using TypeId = int;
+//Supply implementation for type T to name it, using macro below.
+//Default impl doesnt throw any errors, just returns nullptr.
+template <typename T>
+constexpr const char* typeName()
+{
+	return nullptr;
+}
 
-template<typename T>
-class TypeMeta
+
+
+template <typename T>
+constexpr bool typeIsNamed()
+{
+	return typeName<T>() != nullptr;
+}
+
+#define SV_REGTYPENAME(TYPENAME)	template<>									\
+									constexpr const char* typeName<TYPENAME>()	\
+									{											\
+										return #TYPENAME;						\
+									};
+
+//You only have to register name here if you want runtime lookup by std::index.
+class TypeNames
 {
 public:
-	static TypeId id()
+	static const char* getTypeName(std::type_index index)
 	{
-		static TypeId id = static_cast<TypeId>(typeid(T).hash_code());
-		return id;
+		if (const auto* nameFunction = getNameFunction(index))
+		{
+			return (*nameFunction)();
+		}
+		else return nullptr;
 	}
 
-	static const char* name()
+	template<typename T>
+	static void registerNameFunction()
 	{
-		static_assert(false, "unimplemented!");
-		return nullptr;
+		std::type_index index = typeIndex<T>();
+
+		//must not be registered
+		SV_ASSERT(!getNameFunction(index));
+
+		//function must be real and return something
+		bool functionOk = typeName<T>() != nullptr;
+		SV_ASSERT(functionOk);
+
+		instance().typeNameFunctions[index] = &typeName<T>;
 	}
+
+private:
+	DISABLE_COPY_AND_ASSIGNMENT(TypeNames);
+	TypeNames() = default;
+	static TypeNames& instance()
+	{
+		static TypeNames inst;
+		return inst;
+	}
+
+	using TypeNameFunction = const char* (*)();
+
+	static const TypeNameFunction* getNameFunction(std::type_index index)
+	{
+		return getValue(instance().typeNameFunctions, index);
+	}
+
+private:
+	std::map<std::type_index, TypeNameFunction> typeNameFunctions;
 };
-
-#define SV_REGTYPE(TYPENAME)	template<>												\
-								class TypeMeta<TYPENAME>								\
-								{														\
-								public:													\
-									static const char* name() { return #TYPENAME; }		\
-								};
-
-SV_REGTYPE(bool);
-
-template <typename T>
-inline TypeId typeId()
-{
-	return TypeMeta<T>::id();
-}
-
-template <typename T>
-inline const char* typeName()
-{
-	return TypeMeta<T>::name();
-}
