@@ -14,13 +14,18 @@ inline std::type_index typeIndex(const std::any& any)
 	return std::type_index(any.type());
 }
 
+inline const char* anyTypeName(const std::any& any)
+{
+	return TypeNames::getTypeName(typeIndex(any));
+}
+
 inline std::string anyInfo(const std::any& any)
 {
 	if (!any.has_value())
 	{
 		return "any_empty[]";
 	}
-	else if (auto* myTypeName = TypeNames::getTypeName(typeIndex(any)))
+	else if (auto* myTypeName = anyTypeName(any))
 	{
 		return std::format("any_named[{}]", myTypeName);
 	}
@@ -30,6 +35,8 @@ inline std::string anyInfo(const std::any& any)
 		return std::format("any_unnamed[{}]", any.type().name());
 	}
 }
+
+
 
 template <typename T>
 bool anyHoldsType(const std::any& any)
