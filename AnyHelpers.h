@@ -42,8 +42,6 @@ inline std::string anyInfo(const std::any& any)
 	}
 }
 
-
-
 template <typename T>
 bool anyHoldsType(const std::any& any)
 {
