@@ -40,6 +40,12 @@ constexpr bool typeIsNamed()
 										return #TYPENAME;						\
 									};
 
+#define SV_REGTYPENAME_AS(T, TYPENAME)	template<>									\
+										constexpr const char* typeName<T>()			\
+										{											\
+											return TYPENAME;						\
+										};
+
 //You only have to register name here if you want runtime lookup by std::index.
 class TypeNames
 {
@@ -87,3 +93,9 @@ private:
 private:
 	std::map<std::type_index, TypeNameFunction> typeNameFunctions;
 };
+
+SV_REGTYPENAME(bool);
+SV_REGTYPENAME(int);
+SV_REGTYPENAME(double);
+SV_REGTYPENAME(std::string);
+SV_REGTYPENAME_AS(std::vector<bool>, "BoolVec");
