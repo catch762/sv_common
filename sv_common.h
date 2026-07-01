@@ -19,4 +19,4 @@
 #include "StlHelpers.h"
 
 #include "AnyHelpers.h"
-#include "TypeMeta/TypeMeta.h"
+#include "TypeMeta/TypeNaming.h"

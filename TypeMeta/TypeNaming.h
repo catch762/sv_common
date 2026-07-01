@@ -46,7 +46,13 @@ constexpr bool typeIsNamed()
 											return TYPENAME;						\
 										};
 
-//You only have to register name here if you want runtime lookup by std::index.
+//******************************************************************************
+//
+// You only have to register name here if you want runtime lookup by std::index.
+//
+// AND ITS NOT REALLY USED AS OF NOW, ONLY FOR BETTER LOGS !
+//
+//******************************************************************************
 class TypeNames
 {
 public:

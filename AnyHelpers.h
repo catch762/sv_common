@@ -4,7 +4,7 @@
 #include <optional>
 #include "Common.h"
 #include "Formatters.h"
-#include "TypeMeta/TypeMeta.h"
+#include "TypeMeta/TypeNaming.h"
 
 using anyOpt = std::optional<std::any>;
 
