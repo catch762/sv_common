@@ -2,7 +2,8 @@
 #include <typeindex>
 #include "doctest/doctest.h"
 #include <string>
-#include "../Common.h"
+//#include "../Common.h"
+#include "../Logging.h"
 
 template <typename T>
 std::type_index typeIndex()
@@ -32,6 +33,18 @@ template <typename T>
 constexpr bool typeIsNamed()
 {
 	return typeName<T>() != nullptr;
+}
+
+template <typename T>
+std::string typeNameStringAssertive()
+{
+	if (!typeIsNamed<T>())
+	{
+		SV_ERROR(std::format("Failed typeIsNamed() assertion for type (mangled): {}", mangledTypeName<T>()));
+		SV_ASSERT(false && "Failed typeIsNamed() assertion");
+		return {};
+	}
+	return std::string(typeName<T>());
 }
 
 #define SV_REGTYPENAME(TYPENAME)	template<>									\
