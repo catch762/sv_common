@@ -80,6 +80,40 @@ struct std::formatter<std::vector<T>> : std::formatter<T> {
     }
 };
 
+template <typename T, size_t Count>
+struct std::formatter<std::array<T, Count>> : std::formatter<T> {
+
+    using ArrT = std::array<T, Count>;
+
+    std::string_view left = "[ ";
+    std::string_view right = " ]";
+    std::string_view sep = ", ";
+
+    constexpr auto parse(format_parse_context& ctx)
+    {
+        return ctx.begin();
+    }
+
+    template <typename FormatCtx>
+    auto format(const ArrT& arr, FormatCtx& fctx) const
+    {
+        auto out = fctx.out();
+
+        writeStr(out, left);
+
+        for (size_t i = 0; i < arr.size(); ++i)
+        {
+            out = std::formatter<T>::format(arr[i], fctx);
+            if (i < arr.size() - 1)
+            {
+                writeStr(out, sep);
+            }
+        }
+        writeStr(out, right);
+        return out;
+    }
+};
+
 template <typename T>
 struct std::formatter<std::set<T>> : std::formatter<T> {
 

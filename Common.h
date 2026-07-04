@@ -229,18 +229,19 @@ constexpr bool fuzzyEquals(T _a, U _b)
     return std::abs(a - b) < std::numeric_limits<C>::epsilon() * C(100);
 }
 
-//accepts integers, floats, doubles.
+//In C++23, afaik, there will be std::arithmetic concept, for now im using my own.
+//Accepts all integers, floats, doubles.
+template<typename T>
+concept SV_Arithmetic = std::integral<T> || std::floating_point<T> && !std::same_as<T, bool>;
+
 //uses fuzzy comparing when needed
-template <typename T, typename U>
-    requires (std::integral<T> || std::floating_point<T>) &&
-             (std::integral<U> || std::floating_point<U>)
+template <SV_Arithmetic T, SV_Arithmetic U>
 constexpr bool arithmeticEquals(T a, U b)
 {
     if constexpr (std::integral<T> && std::integral<U>)
         return a == b;
     else
-        return fuzzyEquals(static_cast<std::common_type_t<T, U>>(a),
-                           static_cast<std::common_type_t<T, U>>(b));
+        return fuzzyEquals(a, b);
 }
 
 //Assumes base 10, expects strictly valid number strings, no trailing spacebars or anything - otherwise false is returned.
