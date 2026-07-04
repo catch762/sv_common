@@ -27,7 +27,15 @@ constexpr const char* typeName()
 	return nullptr;
 }
 
-
+template <typename T>
+constexpr const char* typeNameOrMangled()
+{
+	if (const char* userNameOFType = typeName<T>())
+	{
+		return userNameOFType;
+	}
+	else return mangledTypeName<T>();
+}
 
 template <typename T>
 constexpr bool typeIsNamed()
