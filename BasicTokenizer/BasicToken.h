@@ -64,6 +64,10 @@ public:
     void setNumberIntData(int num); 
     void setNumberDoubleData(double num); 
 
+    //Multiplies number by -1
+    //If its not number, it will log error and do nothing
+    void negateNumber();
+
     //no matter whats inside, its converted to string and returned
     std::string dataToString() const;
 

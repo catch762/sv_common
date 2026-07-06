@@ -83,6 +83,7 @@ BasicTokenType BasicToken::type() const
     return BasicTokenType(data.index());
 }
 
+
 bool BasicToken::isSymbol           () const { return type() == BasicTokenType::Symbol; }
 bool BasicToken::isString           () const { return type() == BasicTokenType::String; }
 bool BasicToken::isSpecialCharachter() const { return type() == BasicTokenType::SpecialCharachter; }
@@ -186,7 +187,21 @@ void BasicToken::setNumberDoubleData(double num)
     setTypeAndData<BasicTokenType::NumberDouble>(num);
 }
 
-
+void BasicToken::negateNumber()
+{
+    if (isNumberInt())
+    {
+        setNumberIntData(getNumberIntData() * -1);
+    }
+    else if (isNumberDouble())
+    {
+        setNumberDoubleData(getNumberDoubleData() * -1);
+    }
+    else
+    {
+        SV_ERROR(std::format("Cant negate number on a {}", info()));
+    }
+}
 
 bool BasicToken::operator==(const BasicToken &other) const
 {
