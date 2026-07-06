@@ -130,7 +130,7 @@ public:
         {
             for(auto& child : *getChildren())
             {
-                if (!visitor(child)) return false;
+                if (!child.visit(visitor)) return false;
             }
 
             return true;
