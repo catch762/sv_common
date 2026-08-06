@@ -170,24 +170,24 @@ inline StringErrOpt getErrorIfInvalidIndex(intOpt index, int itemsCount, const c
     else return makeInvalidIndexError(index, itemsCount, contextString);
 }
 
-template<typename Key, typename Value>
-Value* getValuePtr(const std::map<Key, Value> &map, const Key& key)
+template<typename Key, typename Value, typename Compare>
+Value* getValuePtr(const std::map<Key, Value, Compare> &map, const Key& key)
 {
     auto found = map.find(key);
     if (found != map.end()) return &found->second;
     else return nullptr;
 }
 
-template<typename Key, typename Value>
-const Value* getValue(const std::map<Key, Value> &map, const Key& key)
+template<typename Key, typename Value, typename Compare>
+const Value* getValue(const std::map<Key, Value, Compare> &map, const Key& key)
 {
     auto found = map.find(key);
     if (found != map.end()) return &found->second;
     else return nullptr;
 }
 
-template<typename Key, typename Value>
-const std::optional<Value> getValueOpt(const std::map<Key, Value> &map, const Key& key)
+template<typename Key, typename Value, typename Compare>
+const std::optional<Value> getValueOpt(const std::map<Key, Value, Compare> &map, const Key& key)
 {
     if (auto value = getValue(map, key)) return *value;
     else return {};
