@@ -36,6 +36,12 @@ inline const std::string* getError(const std::variant<Whatever, std::string>& so
     return std::get_if<std::string>(&somethingOrError);
 }
 
+template<typename Whatever>
+inline Whatever* getValue(std::variant<Whatever, std::string>& somethingOrError)
+{
+    return std::get_if<Whatever>(&somethingOrError);
+}
+
 template<typename WhateverVariant>
 inline std::string variantToString(const WhateverVariant& variantOfWhatever)
 {
