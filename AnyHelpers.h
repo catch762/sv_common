@@ -24,6 +24,12 @@ inline bool anyHoldSameType(const std::any& first, const std::any& second)
 {
 	return typeIndex(first) == typeIndex(second);
 }
+inline bool anyHoldSameType(const std::any* first, const std::any* second)
+{
+	SV_ASSERT(first);
+	SV_ASSERT(second);
+	return anyHoldSameType(*first, *second);
+}
 
 inline std::string anyInfo(const std::any& any)
 {
