@@ -19,6 +19,15 @@ inline const char* anyTypeName(const std::any& any)
 	return TypeNames::getTypeName(typeIndex(any));
 }
 
+inline std::string anyTypeNameOrMangled(const std::any& any)
+{
+	if (auto userName = TypeNames::getTypeName(typeIndex(any)))
+	{
+		return userName;
+	}
+	else return any.type().name();
+}
+
 //this will return true for two empty std::any's
 inline bool anyHoldSameType(const std::any& first, const std::any& second)
 {
