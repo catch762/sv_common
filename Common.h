@@ -187,7 +187,7 @@ const Value* getValue(const std::map<Key, Value, Compare> &map, const Key& key)
 }
 
 template<typename Key, typename Value, typename Compare>
-const std::optional<Value> getValueOpt(const std::map<Key, Value, Compare> &map, const Key& key)
+std::optional<Value> getValueOpt(const std::map<Key, Value, Compare> &map, const Key& key)
 {
     if (auto value = getValue(map, key)) return *value;
     else return {};
