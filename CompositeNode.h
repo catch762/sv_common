@@ -59,28 +59,26 @@ public:
         return std::get_if<Children>(&data);
     }
 
-    /*std::string toString() const
+    std::string toString(bool prettyPrint = true, int level = 0) const
     {
-        return isLeaf() ? toStringInternal() : "\n" + toStringInternal();
-    }*/
+        auto ind = prettyPrint ? std::string((level) * 3, ' ') : std::string();
 
-    std::string toString(int level = 0) const
-    {
-        auto ind = std::string((level) * 3, ' ');
         if (isLeaf())
         {
             return ind + std::format("{}", *getLeafValue());
         }
         else if (auto* children = getChildren())
         {
-            std::string res = ind + "{\n";
+            std::string res = prettyPrint ? ind + "{\n" : "{"
+                ;
             for (int i = 0; i < children->size(); ++i)
             {
-                res += (*children)[i].toString(level + 1);
+                res += (*children)[i].toString(prettyPrint, level + 1);
                 if (i != children->size()-1) res += ",";
-                res += "\n";
+
+                if (prettyPrint) res += "\n";
             }
-            res += ind + "}";
+            res += prettyPrint ? ind + "}" : "}";
             return res;
         }
         else SV_UNREACHABLE();
