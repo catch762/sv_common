@@ -64,6 +64,7 @@ SV_DECL_ALIASES(char)
 using StringSet = std::set<std::string>;
 SV_DECL_ALIASES(StringSet);
 
+//Here 'nullopt' means 'no error'
 using StringErrOpt = std::optional<std::string>;
 
 template<typename T> 
