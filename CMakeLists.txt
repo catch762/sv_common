@@ -8,3 +8,5 @@ add_library(sv_common STATIC ${SV_COMMON_SOURCES})
 target_include_directories(sv_common PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
+
+target_link_libraries(sv_common PUBLIC glm::glm)
