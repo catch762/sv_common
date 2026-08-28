@@ -147,6 +147,44 @@ public:
         rollRad = newRollRad;
     }
 
+    float getPitch() const
+    {
+        return std::asin(glm::clamp(dir.y, -1.0f, 1.0f));
+    }
+    void setPitch(float newPitch)
+    {
+        float curPitch = getPitch();
+        float deltaPitch = newPitch - curPitch;
+
+        auto [upDir, rightDir] = getUpAndRightDirs();
+
+        glm::vec3 rotatedDir = glm::angleAxis(deltaPitch, rightDir) * getDir();
+
+        SV_LOG(std::format("pitch [{}] new [{}] delta [{}] curdir [{}] rotdir [{}]", 
+                            curPitch, newPitch, deltaPitch, getDir(), rotatedDir));
+
+        setDir(rotatedDir);
+    }
+
+    float getYaw() const
+    {
+        // Project dir onto XZ plane
+        float x = dir.x;
+        float z = dir.z;
+        return std::atan2(x, -z); // typical: -Z is forward, +X is right
+    }
+    void setYaw(float newYaw)
+    {
+        float deltaYaw = newYaw - getYaw();
+
+        auto [upDir, rightDir] = getUpAndRightDirs();
+
+        glm::vec3 rotatedDir = glm::angleAxis(deltaYaw, upDir) * getDir();
+
+        setDir(rotatedDir);
+    }
+
+
     void lookAt(glm::vec3 worldPoint)
     {
         glm::vec3 vecToPoint = worldPoint - pos;
