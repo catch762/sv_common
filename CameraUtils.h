@@ -219,7 +219,7 @@ private:
     glm::vec3 pos        = {};
     glm::vec3 dir        = glm::vec3(0, 0, -1);
     float     rollRad    = 0;
-    float	  yFovRad    = glm::radians(45.0f);
+    float	  yFovRad    = glm::radians(80.0f);
 
     float     nearZ      = 0.001f;
     float     farZ       = 1000.0f;
