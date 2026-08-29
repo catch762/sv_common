@@ -3,14 +3,21 @@
 #include "Logging.h"
 #include "GlmUtils.h"
 
+//returns Y or Z axis, which is fine for SOME algorithms that expect "upvec" in this format
+inline glm::vec3 makeNonParallelUpvec(glm::vec3 vec)
+{
+    vec = glm::normalize(vec);
+    bool cameraDirLooksKindaLikeYAxis = abs(vec.y) > 0.99999;
+    return cameraDirLooksKindaLikeYAxis ?   glm::vec3(0, 0, 1) :
+                                            glm::vec3(0, 1, 0);
+}
+
 inline std::pair<glm::vec3, glm::vec3> makeUpAndRightVectors(glm::vec3 cameraForwardDir, float cameraRollRad)
 {
     cameraForwardDir = glm::normalize(cameraForwardDir);
 
     // Start with a world-up that is not parallel to forward
-    bool cameraDirLooksKindaLikeYAxis = abs(cameraForwardDir.y) > 0.9;
-    glm::vec3 worldUp = cameraDirLooksKindaLikeYAxis ?  glm::vec3(0, 0, 1) :
-                                                        glm::vec3(0, 1, 0);
+    glm::vec3 worldUp = makeNonParallelUpvec(cameraForwardDir);
 
     // Initial right and up (no roll yet)
     glm::vec3 right = glm::normalize(glm::cross(worldUp, cameraForwardDir));
@@ -94,10 +101,12 @@ inline std::optional<glm::vec2> worldToScreen11(const glm::mat4& viewProjection,
     return glm::vec2(ndc.x, ndc.y);
 }
 
-class BasicCamera
+// "Plane" means its angle-unconstrained, i.e. if you keep 
+// increasing pitch you ll end up looking upside down.
+class BasicPlaneCamera
 {
 public:
-    BasicCamera() = default;
+    BasicPlaneCamera() = default;
 
     glm::vec3 getPos() const
     {
@@ -111,87 +120,46 @@ public:
 
     glm::vec3 getDir() const
     {
-        return dir;
+        return q_rotation * defaultForward;
     }
-    void setDir(glm::vec3 newDir)
+    glm::vec3 getDirUp() const
     {
-        if (glm::length(newDir) < 0.000001) return;
+        return q_rotation * glm::vec3(0, 1, 0);
+    }
+    glm::vec3 getDirRight() const
+    {
+        return q_rotation * glm::vec3(1, 0, 0);
+    }
+    void lookAtWithoutRoll(glm::vec3 lookAtPos)
+    {
+        glm::vec3 newDir = lookAtPos - pos;
+
+        if (glm::length(newDir) < 0.0000001f)
+        {
+            return;
+        }
+
+        newDir = glm::normalize(newDir);
+        
+        auto [upVec, rightVec] = makeUpAndRightVectors(newDir, 0);
+        
+        q_rotation = glm::quatLookAt(newDir, upVec);
 
         viewProjectionIsDirty = true;
-        dir = newDir;
     }
-
-    std::pair<glm::vec3, glm::vec3> getUpAndRightDirs()
-    {
-        return makeUpAndRightVectors(getDir(), getRoll());
-    }
-
     void moveBy(glm::vec3 movementRightUpForward)
     {
-        auto [upDir, rightDir] = getUpAndRightDirs();
-
-        glm::vec3 movement = movementRightUpForward.x * rightDir +
-                             movementRightUpForward.y * upDir    +
-                             movementRightUpForward.z * getDir();
+        glm::vec3 movement = movementRightUpForward.x * getDirRight () +
+                             movementRightUpForward.y * getDirUp    () +
+                             movementRightUpForward.z * getDir      ();
 
         setPos(getPos() + movement);
     }
 
-    float getRoll() const
+    void addAngles(glm::vec3 eulerPitchYawRollRadians)
     {
-        return rollRad;
-    }
-    void setRoll(float newRollRad)
-    {
+        q_rotation *= glm::quat(eulerPitchYawRollRadians);
         viewProjectionIsDirty = true;
-        rollRad = newRollRad;
-    }
-
-    float getPitch() const
-    {
-        return std::asin(glm::clamp(dir.y, -1.0f, 1.0f));
-    }
-    void setPitch(float newPitch)
-    {
-        float curPitch = getPitch();
-        float deltaPitch = newPitch - curPitch;
-
-        auto [upDir, rightDir] = getUpAndRightDirs();
-
-        glm::vec3 rotatedDir = glm::angleAxis(deltaPitch, rightDir) * getDir();
-
-        SV_LOG(std::format("pitch [{}] new [{}] delta [{}] curdir [{}] rotdir [{}]", 
-                            curPitch, newPitch, deltaPitch, getDir(), rotatedDir));
-
-        setDir(rotatedDir);
-    }
-
-    float getYaw() const
-    {
-        // Project dir onto XZ plane
-        float x = dir.x;
-        float z = dir.z;
-        return std::atan2(x, -z); // typical: -Z is forward, +X is right
-    }
-    void setYaw(float newYaw)
-    {
-        float deltaYaw = newYaw - getYaw();
-
-        auto [upDir, rightDir] = getUpAndRightDirs();
-
-        glm::vec3 rotatedDir = glm::angleAxis(deltaYaw, upDir) * getDir();
-
-        setDir(rotatedDir);
-    }
-
-
-    void lookAt(glm::vec3 worldPoint)
-    {
-        glm::vec3 vecToPoint = worldPoint - pos;
-        if (glm::length(vecToPoint) < 0.0000001) return;
-
-        setDir(glm::normalize(vecToPoint));
-        setRoll(0);
     }
 
     const glm::mat4& getViewProjection()
@@ -212,20 +180,22 @@ public:
 private:
     void updateViewProjection()
     {
-        viewProjection = makeViewProjectionMatrix(pos, rollRad, dir, yFovRad, nearZ, farZ);
+        viewProjection = makeViewProjectionMatrix(pos, getDir(), getDirUp(), yFovRad, nearZ, farZ);
     }
 
 private:
     glm::vec3 pos        = {};
-    glm::vec3 dir        = glm::vec3(0, 0, -1);
-    float     rollRad    = 0;
+    glm::quat q_rotation = {};
     float	  yFovRad    = glm::radians(80.0f);
-
     float     nearZ      = 0.001f;
     float     farZ       = 1000.0f;
 
 private:
-    //Whenever there's change which changes
+    // Whenever there's change of camera position/orientation,
+    // this flag is set, and then VP will be lazy-updated
     bool        viewProjectionIsDirty = true;
     glm::mat4   viewProjection;
+
+private:
+    static const inline glm::vec3 defaultForward = glm::vec3(0.0f, 0.0f, -1.0f);
 };

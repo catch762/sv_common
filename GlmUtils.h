@@ -7,15 +7,15 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 
-// Helper: detect glm::vec<N, T>
-template <typename T>
-struct is_glm_vec : std::false_type {};
+inline bool vectorsParallel(const glm::vec3& v1, const glm::vec3& v2, float epsilon = 0.0000001f)
+{
+    // Compute the cross product
+    glm::vec3 crossProd = glm::cross(v1, v2);
 
-template <glm::length_t L, typename T, glm::qualifier Q>
-struct is_glm_vec<glm::vec<L, T, Q>> : std::true_type {};
+    // Check if the squared length of the cross product is near zero
+    return glm::length2(crossProd) < epsilon;
+}
 
-template <typename T>
-inline constexpr bool is_glm_vec_v = is_glm_vec<T>::value;
 
 template <glm::length_t L, typename T, glm::qualifier Q>
 struct std::formatter<glm::vec<L, T, Q>, char>
