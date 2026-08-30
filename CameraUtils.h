@@ -7,7 +7,7 @@
 inline glm::vec3 makeNonParallelUpvec(glm::vec3 vec)
 {
     vec = glm::normalize(vec);
-    bool cameraDirLooksKindaLikeYAxis = abs(vec.y) > 0.99999;
+    bool cameraDirLooksKindaLikeYAxis = abs(vec.y) > 0.999999;
     return cameraDirLooksKindaLikeYAxis ?   glm::vec3(0, 0, 1) :
                                             glm::vec3(0, 1, 0);
 }
@@ -60,6 +60,7 @@ inline glm::mat4 makeViewProjectionMatrix(  glm::vec3  cameraPos,
 }
 
 
+
 inline glm::mat4 makeViewProjectionMatrix(  glm::vec3  cameraPos,
                                             float      cameraRollRad,
                                             glm::vec3  cameraDir,
@@ -73,6 +74,18 @@ inline glm::mat4 makeViewProjectionMatrix(  glm::vec3  cameraPos,
 }
 
 
+inline std::optional<glm::vec2> clipSpacePointToNDC2D(glm::vec4 clipSpacePoint)
+{
+    //i assume thats all i need to check
+    if (std::abs(clipSpacePoint.w) < 0.000001f)
+    {
+        return std::nullopt;
+    }
+
+    const glm::vec3 ndc = glm::vec3(clipSpacePoint) / clipSpacePoint.w;
+
+    return glm::vec2(ndc.x, ndc.y);
+}
 
 // Returns screen coord of 'worldPos' in [-1,-1], [1, 1] range,
 // or nullopt if point not in frustum
@@ -82,24 +95,150 @@ inline std::optional<glm::vec2> worldToScreen11(const glm::mat4& viewProjection,
     // Transform world position to clip space
     const glm::vec4 clipSpacePoint = viewProjection * glm::vec4(worldPoint, 1.0f);
 
-    // Perspective divide to NDC
-    if (std::abs(clipSpacePoint.w) < 0.0000001f)
-    {
-        return std::nullopt;
-    }
-
-    const glm::vec3 ndc = glm::vec3(clipSpacePoint) / clipSpacePoint.w;
-
-    // Check if inside the canonical view volume [-1, 1]^3
-    if ( std::abs(ndc.x) > 1.0f ||
-         std::abs(ndc.y) > 1.0f ||
-         std::abs(ndc.z) > 1.0f )
-    {
-        return std::nullopt;
-    }
-
-    return glm::vec2(ndc.x, ndc.y);
+    return clipSpacePointToNDC2D(clipSpacePoint);
 }
+
+
+using IntPlaneIndex = int; //[0, 5]
+inline constexpr int PlanesCount = 6;
+
+//Return value: distance from point to that plane.
+//Positive value: point is on the inside of plane.
+//Negative value: point is on the outside of plane
+inline float signedDistToClipspacePlane(const glm::vec4& c, IntPlaneIndex plane)
+{
+    switch (plane) 
+    {
+        case 0: return c.w + c.x; // x >= -w
+        case 1: return c.w - c.x; // x <=  w
+        case 2: return c.w + c.y; // y >= -w
+        case 3: return c.w - c.y; // y <=  w
+        case 4: return c.w + c.z; // z >= -w
+        case 5: return c.w - c.z; // z <=  w
+    }
+
+    SV_UNREACHABLE();
+}
+
+using Line = std::pair<glm::vec4, glm::vec4>;
+SV_DECL_OPT(Line);
+
+//both input and output is in clipspace
+inline LineOpt clipClipspaceLineToFrustum(Line clipspaceLine)
+{
+    glm::vec4 A = clipspaceLine.first;
+    glm::vec4 B = clipspaceLine.second;
+
+    float planeDistA[PlanesCount]; 
+    float planeDistB[PlanesCount];
+    for (IntPlaneIndex i = 0; i < PlanesCount; ++i)
+    {
+        planeDistA[i] = signedDistToClipspacePlane(A, i);
+        planeDistB[i] = signedDistToClipspacePlane(B, i);
+    }
+
+    //Basic checks if we accept or reject right away:
+    {
+        int AOutsidePlanesCount = 0;
+        int BOutsidePlanesCount = 0;
+        for (IntPlaneIndex i = 0; i < PlanesCount; ++i)
+        {
+            bool AOutside = planeDistA[i] < 0.0f;
+            bool BOutside = planeDistB[i] < 0.0f;
+
+            if (AOutside) AOutsidePlanesCount++;
+            if (BOutside) BOutsidePlanesCount++;
+
+            if (AOutside && BOutside)
+            {
+                // Both outside on at least one common plane -> trivial reject
+                return std::nullopt;
+            }
+        }
+
+        if (AOutsidePlanesCount == 0 && BOutsidePlanesCount == 0)
+        {
+            // Both fully inside -> trivial accept, line doesnt need clipping
+            return clipspaceLine;
+        }
+    }
+
+    // Clip the segment against each of the 6 frustum planes in clip space.
+    // For plane i, the signed distance along the segment is:
+    //   dist(t) = distA[i] + t * (distB[i] - distA[i]),  t in [0,1]
+    // We need dist(t) >= 0 for all planes.
+
+    float tEnter = 0.0f;
+    float tExit = 1.0f;
+
+    for (int i = 0; i < PlanesCount; ++i)
+    {
+        // Change of signed distance along the segment for this plane.
+        float distDelta = planeDistB[i] - planeDistA[i];
+
+        // We want: distA[i] + t * distDelta >= 0
+        // Solve for t where dist(t) == 0:  tHit = -distA[i] / distDelta
+        float tHit = -planeDistA[i] / distDelta;
+
+        if (distDelta == 0.0f) {
+            // Distance to this plane is constant along the segment.
+            // If it were negative, the trivial reject test would have caught it already.
+            continue;
+        }
+
+        if (distDelta < 0.0f)
+        {
+            // Distance decreases along the segment: we may exit the frustum through this plane.
+            // The valid t-range ends at tHit (or earlier if another plane cuts sooner).
+            if (tHit < tExit) {
+                tExit = tHit;
+            }
+        }
+        else
+        {
+            // Distance increases along the segment: we may enter the frustum through this plane.
+            // The valid t-range starts at tHit (or later if another plane cuts later).
+            if (tHit > tEnter) {
+                tEnter = tHit;
+            }
+        }
+
+        // If the entry point moves past the exit point, the segment has no visible part.
+        if (tEnter > tExit) {
+            return std::nullopt;
+        }
+    }
+
+    // Clamp to [0,1] just in case of numeric noise
+    tEnter = glm::clamp(tEnter, 0.0f, 1.0f);
+    tExit = glm::clamp(tExit, 0.0f, 1.0f);
+
+    glm::vec4 A_clipped = A + tEnter * (B - A);
+    glm::vec4 B_clipped = A + tExit * (B - A);
+
+    return Line{ A_clipped, B_clipped };
+}
+
+inline std::optional<std::pair<glm::vec2, glm::vec2>> worldLineToScreen(const glm::mat4& VP, glm::vec3 worldA, glm::vec3 worldB)
+{
+    glm::vec4 clipspaceA = VP * glm::vec4(worldA, 1.0f);
+    glm::vec4 clipspaceB = VP * glm::vec4(worldB, 1.0f);
+
+    auto clippedLine = clipClipspaceLineToFrustum({ clipspaceA, clipspaceB });
+    if (!clippedLine)
+    {
+        return std::nullopt;
+    }
+
+    auto ndcA   = clipSpacePointToNDC2D(clippedLine->first);
+    auto ndcB   = clipSpacePointToNDC2D(clippedLine->second);
+
+    if (!ndcA || !ndcB) return std::nullopt;
+
+    return std::make_pair( ndcA.value(), ndcB.value() );
+}
+
+
 
 // "Plane" means its angle-unconstrained, i.e. if you keep 
 // increasing pitch you ll end up looking upside down.
