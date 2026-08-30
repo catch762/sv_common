@@ -295,10 +295,44 @@ public:
         setPos(getPos() + movement);
     }
 
-    void addAngles(glm::vec3 eulerPitchYawRollRadians)
+    void addAngles(glm::vec3 pitchYawRollRadians)
     {
-        q_rotation *= glm::quat(eulerPitchYawRollRadians);
+        //********************************************************************************
+        // Note: this entire function could be: 
+        //      q_rotation *= glm::quat(eulerPitchYawRollRadians);
+        // 
+        // But this, for instance, does introduce roll even if you always pass 0 for roll.
+        // So im rotating sequentially
+        //********************************************************************************
+
         viewProjectionIsDirty = true;
+
+        const float deltaPitch  = pitchYawRollRadians.x;
+        const float deltaYaw    = pitchYawRollRadians.y;
+        const float deltaRoll   = pitchYawRollRadians.z;
+
+        //Note that each rotation makes old values of getSomeDir() outdated.
+
+        // 1) Roll around current local
+        {
+            glm::quat qRoll = glm::angleAxis(deltaRoll, getDir());
+            q_rotation = qRoll * q_rotation;
+            q_rotation = glm::normalize(q_rotation);
+        }
+
+        // 2) Pitch around current local right
+        {
+            glm::quat qPitch = glm::angleAxis(deltaPitch, getDirRight());
+            q_rotation = qPitch * q_rotation;
+            q_rotation = glm::normalize(q_rotation);
+        }
+
+        // 3) Yaw around WORLD up (after pitch)
+        {
+            glm::quat qYaw = glm::angleAxis(deltaYaw, glm::vec3(0, 1, 0));
+            q_rotation = qYaw * q_rotation;
+            q_rotation = glm::normalize(q_rotation);
+        }
     }
 
     const glm::mat4& getViewProjection()
