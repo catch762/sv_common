@@ -7,6 +7,14 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 
+using Vec2Pair = std::pair<glm::vec2, glm::vec2>;
+SV_DECL_OPT(Vec2Pair);
+using Vec3Pair = std::pair<glm::vec3, glm::vec3>;
+SV_DECL_OPT(Vec2Pair);
+
+using Vec2Opt = std::optional<glm::vec2>;
+using Vec3Opt = std::optional<glm::vec3>;
+
 inline bool vectorsParallel(const glm::vec3& v1, const glm::vec3& v2, float epsilon = 0.0000001f)
 {
     // Compute the cross product
@@ -16,6 +24,10 @@ inline bool vectorsParallel(const glm::vec3& v1, const glm::vec3& v2, float epsi
     return glm::length2(crossProd) < epsilon;
 }
 
+inline std::string toString(glm::vec3 vec)
+{
+    return std::format("[{:.3f}, {:.3f}, {:.3f}]", vec.x, vec.y, vec.z);
+}
 
 template <glm::length_t L, typename T, glm::qualifier Q>
 struct std::formatter<glm::vec<L, T, Q>, char>

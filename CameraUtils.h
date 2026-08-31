@@ -120,11 +120,12 @@ inline float signedDistToClipspacePlane(const glm::vec4& c, IntPlaneIndex plane)
     SV_UNREACHABLE();
 }
 
-using Line = std::pair<glm::vec4, glm::vec4>;
-SV_DECL_OPT(Line);
+using ClipspaceLine = std::pair<glm::vec4, glm::vec4>;
+SV_DECL_OPT(ClipspaceLine);
 
-//both input and output is in clipspace
-inline LineOpt clipClipspaceLineToFrustum(Line clipspaceLine)
+//both input and output is in clipspace.
+//output is nullopt, if entire line is completely outside frustum
+inline ClipspaceLineOpt clipClipspaceLineToFrustum(ClipspaceLine clipspaceLine)
 {
     glm::vec4 A = clipspaceLine.first;
     glm::vec4 B = clipspaceLine.second;
@@ -216,15 +217,35 @@ inline LineOpt clipClipspaceLineToFrustum(Line clipspaceLine)
     glm::vec4 A_clipped = A + tEnter * (B - A);
     glm::vec4 B_clipped = A + tExit * (B - A);
 
-    return Line{ A_clipped, B_clipped };
+    return ClipspaceLine{ A_clipped, B_clipped };
 }
 
-inline std::optional<std::pair<glm::vec2, glm::vec2>> worldLineToScreen(const glm::mat4& VP, glm::vec3 worldA, glm::vec3 worldB)
+inline Vec3Opt clipSpacePointToWorld(const glm::mat4& invertedVP, glm::vec4 clipSpacePoint)
+{
+    // Reject near-zero w to avoid division issues
+    if (std::abs(clipSpacePoint.w) < 0.000001f)
+    {
+        return std::nullopt;
+    }
+
+    // Convert from clip space to world space (homogeneous)
+    glm::vec4 worldHom = invertedVP * clipSpacePoint;
+
+    if (std::abs(worldHom.w) < 0.000001f)
+    {
+        return std::nullopt;
+    }
+
+    glm::vec3 worldPos = glm::vec3(worldHom) / worldHom.w;
+    return worldPos;
+}
+
+inline Vec2PairOpt worldLineToScreen(const glm::mat4& VP, glm::vec3 worldA, glm::vec3 worldB, ClipspaceLine* outClippedLine = nullptr)
 {
     glm::vec4 clipspaceA = VP * glm::vec4(worldA, 1.0f);
     glm::vec4 clipspaceB = VP * glm::vec4(worldB, 1.0f);
 
-    auto clippedLine = clipClipspaceLineToFrustum({ clipspaceA, clipspaceB });
+    ClipspaceLineOpt clippedLine = clipClipspaceLineToFrustum({ clipspaceA, clipspaceB });
     if (!clippedLine)
     {
         return std::nullopt;
@@ -235,10 +256,38 @@ inline std::optional<std::pair<glm::vec2, glm::vec2>> worldLineToScreen(const gl
 
     if (!ndcA || !ndcB) return std::nullopt;
 
-    return std::make_pair( ndcA.value(), ndcB.value() );
+    if (outClippedLine)
+    {
+        *outClippedLine = *clippedLine;
+    }
+
+    return Vec2Pair( ndcA.value(), ndcB.value() );
 }
 
+//returns clipped ndc screen coords + corresponding clipped to screen world coords 
+inline std::optional<std::pair<Vec2Pair, Vec3Pair>> worldLineToScreenAndWorldClip(const glm::mat4& VP, const glm::mat4& invertedVP, glm::vec3 worldA, glm::vec3 worldB)
+{
+    ClipspaceLine clippedLine;
+    Vec2PairOpt ndcCoords = worldLineToScreen(VP, worldA, worldB, &clippedLine);
+    if (!ndcCoords)
+    {
+        return std::nullopt;
+    }
 
+    Vec3Opt clippedWorldA = clipSpacePointToWorld(invertedVP, clippedLine.first);
+    if (!clippedWorldA)
+    {
+        return std::nullopt;
+    }
+
+    Vec3Opt clippedWorldB = clipSpacePointToWorld(invertedVP, clippedLine.second);
+    if (!clippedWorldB)
+    {
+        return std::nullopt;
+    }
+
+    return std::make_pair(*ndcCoords, std::make_pair(*clippedWorldA, *clippedWorldA));
+}
 
 // "Plane" means its angle-unconstrained, i.e. if you keep 
 // increasing pitch you ll end up looking upside down.
@@ -257,6 +306,32 @@ public:
         pos = newPos;
     }
 
+    float getPitch() const
+    {
+        return glm::pitch(q_rotation);
+    }
+    float getYaw() const
+    {
+        return glm::yaw(q_rotation);
+    }
+    float getRoll() const
+    {
+        return glm::roll(q_rotation);
+    }
+    glm::vec3 getPitchYawRoll() const
+    {
+        return glm::eulerAngles(q_rotation);
+    }
+
+    std::string toString() const
+    {
+        auto pitchYawRoll        = getPitchYawRoll();
+        auto pitchYawRollDegrees = glm::vec3(glm::degrees(pitchYawRoll.x),
+                                             glm::degrees(pitchYawRoll.y),
+                                             glm::degrees(pitchYawRoll.z));
+        return std::format("POS {} PITCH-YAW-ROLL P {}", ::toString(pos), ::toString(pitchYawRollDegrees));
+    }
+
     glm::vec3 getDir() const
     {
         return q_rotation * defaultForward;
@@ -267,7 +342,11 @@ public:
     }
     glm::vec3 getDirRight() const
     {
-        return q_rotation * glm::vec3(1, 0, 0);
+        auto right = q_rotation * glm::vec3(1, 0, 0);
+
+        //if (isCameraUpsideDown()) right *= -1.0f;
+
+        return right;
     }
     void lookAtWithoutRoll(glm::vec3 lookAtPos)
     {
@@ -297,14 +376,21 @@ public:
 
     void addAngles(glm::vec3 pitchYawRollRadians)
     {
-        //********************************************************************************
-        // Note: this entire function could be: 
-        //      q_rotation *= glm::quat(eulerPitchYawRollRadians);
-        // 
-        // But this, for instance, does introduce roll even if you always pass 0 for roll.
-        // So im rotating sequentially
-        //********************************************************************************
+        planeStyleCamera_addAngles_v1(pitchYawRollRadians);
+    }
 
+    bool isCameraUpsideDown() const
+    {
+        glm::vec3 up = getDirUp();          // local up in world space
+        return up.y < 0.0f;                 // true if camera is pitched > 90° or < -90°
+    }
+
+    // This is for the "Plane style camera", which means: if you keep changing pitch,
+    // it should always lets you, so you may end up upside down, it should be unlimited.
+    //
+    // This specific version: doesnt work, see comment inside
+    void planeStyleCamera_addAngles_v1(glm::vec3 pitchYawRollRadians)
+    {
         viewProjectionIsDirty = true;
 
         const float deltaPitch  = pitchYawRollRadians.x;
@@ -329,7 +415,34 @@ public:
 
         // 3) Yaw around WORLD up (after pitch)
         {
-            glm::quat qYaw = glm::angleAxis(deltaYaw, glm::vec3(0, 1, 0));
+
+            // 1. add second camera and look at first, check if right vec is inverted
+            // 2. maybe just restore roll with getDirUp approach? add get/set roll
+
+
+            // No matter which up vector i pick, its wrong, but for different reasons:
+            // 
+            //  1) If i select worldUp:
+            //      It renders correctly, but at some angles, when camera is flipped upside down,
+            //      some controls are inverted
+            //
+            //  2) If i select local up vector getDirUp():
+            //      It renders correctly, and controls are not flipped, but even if deltaRoll is always 0,
+            //      changing pitch and yaw also adds roll quite quickly. I expect roll to stay exactly what it was,
+            //      if i only change pitch and yaw
+            bool selectWorldUp = true;
+
+            glm::vec3 worldUp = glm::vec3(0, 1, 0);
+
+            if (isCameraUpsideDown())
+            {
+                worldUp *= -1;
+            }
+
+            glm::vec3 upSelected = selectWorldUp ? worldUp : getDirUp();
+
+
+            glm::quat qYaw = glm::angleAxis(deltaYaw, upSelected);
             q_rotation = qYaw * q_rotation;
             q_rotation = glm::normalize(q_rotation);
         }
