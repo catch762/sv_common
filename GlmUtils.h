@@ -6,6 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
+#include <glm/gtc/constants.hpp>
 
 using Vec2Pair = std::pair<glm::vec2, glm::vec2>;
 SV_DECL_OPT(Vec2Pair);
@@ -14,6 +15,59 @@ SV_DECL_OPT(Vec2Pair);
 
 using Vec2Opt = std::optional<glm::vec2>;
 using Vec3Opt = std::optional<glm::vec3>;
+
+constexpr float piF()
+{
+    return glm::pi<float>();
+}
+constexpr float twoPiF()
+{
+    return 2.0f * piF();
+}
+
+template <typename T>
+T normalizeAngle_0_2pi(T angle)
+{
+    T twoPi = glm::two_pi<T>();
+
+    angle = glm::mod(angle, twoPi);      // result in (-2pi, 2pi)
+
+    if (angle < T(0))
+    {
+        angle += twoPi;                  // shift into [0, 2pi)
+    }
+
+    return angle;
+}
+
+template <typename T>
+T normalizeAngle_minusPi_Pi(T angle)
+{
+    auto pi = glm::pi<T>();
+
+    T ang = normalizeAngle_0_2pi(angle);
+    if (ang > pi)
+    {
+        ang = -pi + (ang - pi);
+    }
+
+    return ang;
+}
+
+template <typename T>
+inline T radTo11(T radians)
+{
+    return normalizeAngle_minusPi_Pi(radians) / glm::pi<T>();
+}
+
+
+template <typename T>
+inline T ang11ToRad(T ang11)
+{
+    return ang11 * glm::pi<T>();
+}
+
+
 
 inline bool vectorsParallel(const glm::vec3& v1, const glm::vec3& v2, float epsilon = 0.0000001f)
 {
@@ -26,7 +80,7 @@ inline bool vectorsParallel(const glm::vec3& v1, const glm::vec3& v2, float epsi
 
 inline std::string toString(glm::vec3 vec)
 {
-    return std::format("[{:.3f}, {:.3f}, {:.3f}]", vec.x, vec.y, vec.z);
+    return std::format("[{:.2f}, {:.2f}, {:.2f}]", vec.x, vec.y, vec.z);
 }
 
 template <glm::length_t L, typename T, glm::qualifier Q>

@@ -320,6 +320,21 @@ public:
     {
         return glm::roll(q_rotation);
     }
+
+    void setRoll(float roll)
+    {
+        // Extract current Euler angles (pitch, yaw, roll) in GLM's convention
+        glm::vec3 euler = glm::eulerAngles(q_rotation); // x=pitch, y=yaw, z=roll
+
+        // Replace only the roll component
+        euler.z = roll;
+
+        // Reconstruct quaternion from Euler angles
+        q_rotation = glm::quat(euler);
+
+        viewProjectionIsDirty = true;
+    }
+
     glm::vec3 getPitchYawRoll() const
     {
         return glm::eulerAngles(q_rotation);
@@ -331,7 +346,7 @@ public:
         auto pitchYawRollDegrees = glm::vec3(glm::degrees(pitchYawRoll.x),
                                              glm::degrees(pitchYawRoll.y),
                                              glm::degrees(pitchYawRoll.z));
-        return std::format("POS {} PITCH-YAW-ROLL P {}", ::toString(pos), ::toString(pitchYawRollDegrees));
+        return std::format("POS {} PYR {}", ::toString(pos), ::toString(pitchYawRollDegrees));
     }
 
     glm::vec3 getDir() const
@@ -498,10 +513,10 @@ private:
     float     aspect     = 1.0; //w/h
 private:
     // Whenever there's change of camera position/orientation,
-    // this flag is set, and then VP will be lazy-updated
+    // this flag is set, and then matrices will be lazy-updated
     bool        viewProjectionIsDirty = true;
     glm::mat4   viewProjection;
-    glm::mat4   invertedViewProjection;
+    glm::mat4   invertedViewProjection; //needed to convert clipspace coords back to world
 
 private:
     static const inline glm::vec3 defaultForward = glm::vec3(0.0f, 0.0f, -1.0f);
