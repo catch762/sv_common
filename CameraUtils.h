@@ -39,6 +39,7 @@ inline glm::mat4 makeViewProjectionMatrix(  glm::vec3  cameraPos,
                                             glm::vec3  cameraDir,
                                             glm::vec3  cameraDirUp,
                                             float      cameraYFOVRad,
+                                            float      aspect,
                                             float      nearZ = 0.01f,
                                             float      farZ  = 1000.0f )
 {
@@ -52,7 +53,7 @@ inline glm::mat4 makeViewProjectionMatrix(  glm::vec3  cameraPos,
     // Aspect ratio is irrelevant for NDC x/y in [-1,1] if we treat the
     // projection as square; we can just use aspect = 1.
     // Near/far can be arbitrary positive values as long as near < far.
-    const float     aspect  = 1.0f; // square frustum for pure NDC
+
     const glm::mat4 proj    = glm::perspective(cameraYFOVRad, aspect, nearZ, farZ);
 
     const glm::mat4 viewProjection = proj * view;
@@ -65,12 +66,13 @@ inline glm::mat4 makeViewProjectionMatrix(  glm::vec3  cameraPos,
                                             float      cameraRollRad,
                                             glm::vec3  cameraDir,
                                             float      cameraYFOVRad,
+                                            float      aspect,
                                             float      nearZ = 0.01f,
                                             float      farZ  = 1000.0f )
 {
     auto [upVec, rightVec] = makeUpAndRightVectors(cameraDir, cameraRollRad);
 
-    return makeViewProjectionMatrix(cameraPos, cameraDir, upVec, cameraYFOVRad, nearZ, farZ);
+    return makeViewProjectionMatrix(cameraPos, cameraDir, upVec, cameraYFOVRad, aspect, nearZ, farZ);
 }
 
 
@@ -286,7 +288,7 @@ inline std::optional<std::pair<Vec2Pair, Vec3Pair>> worldLineToScreenAndWorldCli
         return std::nullopt;
     }
 
-    return std::make_pair(*ndcCoords, std::make_pair(*clippedWorldA, *clippedWorldA));
+    return std::make_pair(*ndcCoords, std::make_pair(*clippedWorldA, *clippedWorldB));
 }
 
 // "Plane" means its angle-unconstrained, i.e. if you keep 
@@ -453,9 +455,16 @@ public:
         if (viewProjectionIsDirty)
         {
             updateViewProjection();
-            viewProjectionIsDirty = false;
         }
         return viewProjection;
+    }
+    const glm::mat4& getInvertedViewProjection()
+    {
+        if (viewProjectionIsDirty)
+        {
+            updateViewProjection();
+        }
+        return invertedViewProjection;
     }
 
     std::optional<glm::vec2> worldToScreen11(glm::vec3 worldPoint)
@@ -463,10 +472,21 @@ public:
         return ::worldToScreen11(getViewProjection(), worldPoint);
     }
 
+    void setAspect(float newAspect)
+    {
+        if (abs(aspect - newAspect) > 0.000001)
+        {
+            aspect = newAspect;
+            viewProjectionIsDirty = true;
+        }
+    }
+
 private:
     void updateViewProjection()
     {
-        viewProjection = makeViewProjectionMatrix(pos, getDir(), getDirUp(), yFovRad, nearZ, farZ);
+        viewProjection = makeViewProjectionMatrix(pos, getDir(), getDirUp(), yFovRad, aspect, nearZ, farZ);
+        invertedViewProjection = glm::inverse(viewProjection);
+        viewProjectionIsDirty = false;
     }
 
 private:
@@ -475,12 +495,13 @@ private:
     float	  yFovRad    = glm::radians(80.0f);
     float     nearZ      = 0.001f;
     float     farZ       = 1000.0f;
-
+    float     aspect     = 1.0; //w/h
 private:
     // Whenever there's change of camera position/orientation,
     // this flag is set, and then VP will be lazy-updated
     bool        viewProjectionIsDirty = true;
     glm::mat4   viewProjection;
+    glm::mat4   invertedViewProjection;
 
 private:
     static const inline glm::vec3 defaultForward = glm::vec3(0.0f, 0.0f, -1.0f);
