@@ -110,6 +110,15 @@ public:
     }
 };
 
+inline void normalizeRange(double& min, double& max)
+{
+    if (min > max) std::swap(min, max);
+}
+inline void normalizeRange(double& min, double& max, double& val)
+{
+    normalizeRange(min, max);
+    val = std::clamp(val, min, max);
+}
 
 template<typename T>
 inline T mix(T a, T b, double b_ratio01)
