@@ -321,6 +321,23 @@ public:
         return glm::roll(q_rotation);
     }
 
+    float getYFov() const
+    {
+        return yFovRad;
+    }
+    void setYFov(float newYFovRad)
+    {
+        yFovRad = newYFovRad;
+        viewProjectionIsDirty = true;
+    }
+
+    void setPitch(float pitch)
+    {
+    }
+    void setYaw(float yaw)
+    {
+    }
+
     void setRoll(float roll)
     {
         // Extract current Euler angles (pitch, yaw, roll) in GLM's convention
