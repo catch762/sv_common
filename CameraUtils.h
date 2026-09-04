@@ -408,10 +408,7 @@ public:
         setPos(getPos() + movement);
     }
 
-    void addAngles(glm::vec3 pitchYawRollRadians)
-    {
-        planeStyleCamera_addAngles_v1(pitchYawRollRadians);
-    }
+    void addAngles(glm::vec3 pitchYawRollRadians);
 
     bool isCameraUpsideDown() const
     {
@@ -423,64 +420,8 @@ public:
     // it should always lets you, so you may end up upside down, it should be unlimited.
     //
     // This specific version: doesnt work, see comment inside
-    void planeStyleCamera_addAngles_v1(glm::vec3 pitchYawRollRadians)
-    {
-        viewProjectionIsDirty = true;
-
-        const float deltaPitch  = pitchYawRollRadians.x;
-        const float deltaYaw    = pitchYawRollRadians.y;
-        const float deltaRoll   = pitchYawRollRadians.z;
-
-        //Note that each rotation makes old values of getSomeDir() outdated.
-
-        // 1) Roll around current local
-        {
-            glm::quat qRoll = glm::angleAxis(deltaRoll, getDir());
-            q_rotation = qRoll * q_rotation;
-            q_rotation = glm::normalize(q_rotation);
-        }
-
-        // 2) Pitch around current local right
-        {
-            glm::quat qPitch = glm::angleAxis(deltaPitch, getDirRight());
-            q_rotation = qPitch * q_rotation;
-            q_rotation = glm::normalize(q_rotation);
-        }
-
-        // 3) Yaw around WORLD up (after pitch)
-        {
-
-            // 1. add second camera and look at first, check if right vec is inverted
-            // 2. maybe just restore roll with getDirUp approach? add get/set roll
-
-
-            // No matter which up vector i pick, its wrong, but for different reasons:
-            // 
-            //  1) If i select worldUp:
-            //      It renders correctly, but at some angles, when camera is flipped upside down,
-            //      some controls are inverted
-            //
-            //  2) If i select local up vector getDirUp():
-            //      It renders correctly, and controls are not flipped, but even if deltaRoll is always 0,
-            //      changing pitch and yaw also adds roll quite quickly. I expect roll to stay exactly what it was,
-            //      if i only change pitch and yaw
-            bool selectWorldUp = true;
-
-            glm::vec3 worldUp = glm::vec3(0, 1, 0);
-
-            if (isCameraUpsideDown())
-            {
-                worldUp *= -1;
-            }
-
-            glm::vec3 upSelected = selectWorldUp ? worldUp : getDirUp();
-
-
-            glm::quat qYaw = glm::angleAxis(deltaYaw, upSelected);
-            q_rotation = qYaw * q_rotation;
-            q_rotation = glm::normalize(q_rotation);
-        }
-    }
+    void planeStyleCamera_addAngles_v1(glm::vec3 pitchYawRollRadians);
+    void planeStyleCamera_addAngles_v2(glm::vec3 pitchYawRollRadians);
 
     const glm::mat4& getViewProjection()
     {
