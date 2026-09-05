@@ -291,6 +291,13 @@ inline std::optional<std::pair<Vec2Pair, Vec3Pair>> worldLineToScreenAndWorldCli
     return std::make_pair(*ndcCoords, std::make_pair(*clippedWorldA, *clippedWorldB));
 }
 
+//********************************************************
+// Note:
+//      glm::pitch(q)   - OK, [-180 to 180]
+//      glm::yaw(q)     - SHIT, [0 to 90 to 0 to -90 to 0]
+//      glm::roll(q)    - OK, [-180 to 180]
+//********************************************************
+
 // "Plane" means its angle-unconstrained, i.e. if you keep 
 // increasing pitch you ll end up looking upside down.
 class BasicPlaneCamera
@@ -310,15 +317,15 @@ public:
 
     float getPitch() const
     {
-        return glm::pitch(q_rotation);
+        return pitch;
     }
     float getYaw() const
     {
-        return glm::yaw(q_rotation);
+        return yaw;
     }
     float getRoll() const
     {
-        return glm::roll(q_rotation);
+        return roll;
     }
 
     float getYFov() const
@@ -331,39 +338,67 @@ public:
         viewProjectionIsDirty = true;
     }
 
-    void setPitch(float pitch)
+    void setPitch(float newPitch)
     {
-    }
-    void setYaw(float yaw)
-    {
-    }
-
-    void setRoll(float roll)
-    {
-        // Extract current Euler angles (pitch, yaw, roll) in GLM's convention
-        glm::vec3 euler = glm::eulerAngles(q_rotation); // x=pitch, y=yaw, z=roll
-
-        // Replace only the roll component
-        euler.z = roll;
-
-        // Reconstruct quaternion from Euler angles
-        q_rotation = glm::quat(euler);
+        pitch = normalizeAngle_minusPi_Pi(newPitch);
+        pitch = std::clamp(pitch, minPitch, maxPitch);
 
         viewProjectionIsDirty = true;
+        rebuildQuaternionFromAngles();
+    }
+    void setYaw(float newYaw)
+    {
+        yaw = normalizeAngle_minusPi_Pi(newYaw);
+
+        viewProjectionIsDirty = true;
+        rebuildQuaternionFromAngles();
+    }
+
+    void setRoll(float newRoll)
+    {
+        roll = normalizeAngle_minusPi_Pi(newRoll);
+
+        viewProjectionIsDirty = true;
+        rebuildQuaternionFromAngles();
+    }
+
+    void rebuildQuaternionFromAngles()
+    {
+        q_rotation = glm::quat({pitch, yaw, 0});
+
+        glm::quat qRoll = glm::angleAxis(roll, getDir());
+
+        q_rotation = qRoll * q_rotation;
     }
 
     glm::vec3 getPitchYawRoll() const
     {
-        return glm::eulerAngles(q_rotation);
+        return {getPitch(), getYaw(), getRoll()};
+    }
+
+    //yaw will be [-180,180], correct pitch will be only in [-90 to 90]
+    //i mean its all in radians ofcourse
+    static void dirToYawPitch(const glm::vec3& dir, float& outYaw, float& outPitch)
+    {
+        // dir must be normalized
+        // yaw: angle around Y, measured from -Z towards +X
+        outYaw = std::atan2(dir.x, -dir.z);
+
+        // pitch: angle up/down from XZ plane
+        outPitch = std::asin(dir.y); // dir.y == sin(pitch)
     }
 
     std::string toString() const
     {
+        float otherYaw, otherPitch;
+        dirToYawPitch(getDir(), otherYaw, otherPitch);
+
         auto pitchYawRoll        = getPitchYawRoll();
         auto pitchYawRollDegrees = glm::vec3(glm::degrees(pitchYawRoll.x),
                                              glm::degrees(pitchYawRoll.y),
                                              glm::degrees(pitchYawRoll.z));
-        return std::format("POS {} PYR {}", ::toString(pos), ::toString(pitchYawRollDegrees));
+        return std::format("POS {} PYR {} PY {} {}",
+            ::toString(pos), ::toString(pitchYawRollDegrees), glm::degrees(otherPitch), glm::degrees(otherYaw));
     }
 
     glm::vec3 getDir() const
@@ -422,6 +457,7 @@ public:
     // This specific version: doesnt work, see comment inside
     void planeStyleCamera_addAngles_v1(glm::vec3 pitchYawRollRadians);
     void planeStyleCamera_addAngles_v2(glm::vec3 pitchYawRollRadians);
+    void addAngles_usingSet(glm::vec3 pitchYawRollRadians);
 
     const glm::mat4& getViewProjection()
     {
@@ -464,11 +500,21 @@ private:
 
 private:
     glm::vec3 pos        = {};
-    glm::quat q_rotation = {};
     float	  yFovRad    = glm::radians(80.0f);
     float     nearZ      = 0.001f;
     float     farZ       = 1000.0f;
     float     aspect     = 1.0; //w/h
+
+    float       pitch   = 0.0f;
+    float       yaw     = 0.0f;
+    float       roll    = 0.0f;
+
+    static constexpr float minPitch = -glm::radians(89.0f);
+    static constexpr float maxPitch = glm::radians(89.0f);
+
+private:
+    glm::quat q_rotation = {};
+
 private:
     // Whenever there's change of camera position/orientation,
     // this flag is set, and then matrices will be lazy-updated

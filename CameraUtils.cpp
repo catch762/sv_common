@@ -2,7 +2,7 @@
 
 void BasicPlaneCamera::addAngles(glm::vec3 pitchYawRollRadians)
 {
-    planeStyleCamera_addAngles_v2(pitchYawRollRadians);
+    addAngles_usingSet(pitchYawRollRadians);
 }
 
 void BasicPlaneCamera::planeStyleCamera_addAngles_v1(glm::vec3 pitchYawRollRadians)
@@ -98,4 +98,20 @@ void BasicPlaneCamera::planeStyleCamera_addAngles_v2(glm::vec3 pitchYawRollRadia
 
     // Normalize to avoid drift.
     q_rotation = glm::normalize(qNew);
+}
+
+void BasicPlaneCamera::addAngles_usingSet(glm::vec3 pitchYawRollRadians)
+{
+    if (std::abs(pitchYawRollRadians.x) > 0.0000001)
+    {
+        setPitch(pitch + pitchYawRollRadians.x);
+    }
+    if (std::abs(pitchYawRollRadians.y) > 0.0000001)
+    {
+        setYaw(yaw + pitchYawRollRadians.y);
+    }
+    if (std::abs(pitchYawRollRadians.z) > 0.0000001)
+    {
+        setRoll(roll + pitchYawRollRadians.z);
+    }
 }
