@@ -364,6 +364,12 @@ public:
 
     void rebuildQuaternionFromAngles()
     {
+        //Note:
+        //q_rotation = glm::quat({pitch, yaw, roll});
+        //-> Yaw is around global Y, pitch around local right, and roll around global Z.
+        
+        
+
         q_rotation = glm::quat({pitch, yaw, 0});
 
         glm::quat qRoll = glm::angleAxis(roll, getDir());
