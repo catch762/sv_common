@@ -20,5 +20,6 @@
 
 #include "AnyHelpers.h"
 #include "TypeMeta/TypeNaming.h"
-#include "GlmUtils.h"
-#include "CameraUtils.h"
+#include "GlmAnd3d/GlmUtils.h"
+#include "GlmAnd3d/CameraUtils.h"
+#include "GlmAnd3d/BasicFPSCamera.h"
