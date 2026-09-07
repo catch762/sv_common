@@ -64,13 +64,12 @@ void BasicFPSCamera::setRoll(float newRoll)
 
 void BasicFPSCamera::rebuildQuaternionFromAngles()
 {
-    //Note:
+    //Note: what this does is:
 
-
-
-
+    //1) yaw around global Y, pitch around local right, [skip adding roll cause glm would roll around global Z]
     q_rotation = glm::quat({ pitch, yaw, 0 });
 
+    //2) do roll on my own, around local forward dir.
     glm::quat qRoll = glm::angleAxis(roll, getDir());
 
     q_rotation = qRoll * q_rotation;
@@ -137,17 +136,27 @@ void BasicFPSCamera::moveBy(glm::vec3 movementRightUpForward)
 
 void BasicFPSCamera::addAngles(glm::vec3 pitchYawRollRadians)
 {
-    if (std::abs(pitchYawRollRadians.x) > 0.0000001)
+    float deltaPitch    = pitchYawRollRadians.x;
+    float deltaYaw      = pitchYawRollRadians.y;
+    float deltaRoll     = pitchYawRollRadians.z;
+
+    /*if (isCameraUpsideDown())
     {
-        setPitch(pitch + pitchYawRollRadians.x);
+        deltaPitch *= -1.0f;
+        deltaYaw *= -1.0f;
+    }*/
+
+    if (std::abs(deltaPitch) > 0.0000001)
+    {
+        setPitch(pitch + deltaPitch);
     }
-    if (std::abs(pitchYawRollRadians.y) > 0.0000001)
+    if (std::abs(deltaYaw) > 0.0000001)
     {
-        setYaw(yaw + pitchYawRollRadians.y);
+        setYaw(yaw + deltaYaw);
     }
-    if (std::abs(pitchYawRollRadians.z) > 0.0000001)
+    if (std::abs(deltaRoll) > 0.0000001)
     {
-        setRoll(roll + pitchYawRollRadians.z);
+        setRoll(roll + deltaRoll);
     }
 }
 

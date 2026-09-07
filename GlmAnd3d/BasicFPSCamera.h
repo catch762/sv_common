@@ -82,9 +82,9 @@ private:
     float       farZ        = 1000.0f;
     float       aspect      = 1.0; //w/h
 
-    float       pitch       = 0.0f;
-    float       yaw         = 0.0f;
-    float       roll        = 0.0f;
+    float       yaw         = 0.0f; //1st rotation: yaw around global Y
+    float       pitch       = 0.0f; //2nd rotation: pitch around local right
+    float       roll        = 0.0f; //3rd rotation: roll around local forward
     glm::quat   q_rotation  = {};
 
 private:
