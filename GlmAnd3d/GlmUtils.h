@@ -7,6 +7,20 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/constants.hpp>
+#include <concepts>
+
+
+template <typename T>
+concept GlmUnderlyingType = std::same_as<T, int> ||
+                            std::same_as<T, float> ||
+                            std::same_as<T, double>;
+
+template <int Size>
+concept ValidGlmVecSize = Size == 2 || Size == 3 || Size == 4;
+
+//template<GlmUnderlyingType T, int Count>
+//  requires ValidGlmVecSize<Count>
+//using ExampleVecT = glm::vec<Count, T>;
 
 using Vec2Pair = std::pair<glm::vec2, glm::vec2>;
 SV_DECL_OPT(Vec2Pair);
@@ -15,6 +29,7 @@ SV_DECL_OPT(Vec2Pair);
 
 using Vec2Opt = std::optional<glm::vec2>;
 using Vec3Opt = std::optional<glm::vec3>;
+using Vec4Opt = std::optional<glm::vec4>;
 
 constexpr float piF()
 {
