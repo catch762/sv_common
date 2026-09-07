@@ -98,6 +98,17 @@ inline std::string toString(glm::vec3 vec)
     return std::format("[{:.2f}, {:.2f}, {:.2f}]", vec.x, vec.y, vec.z);
 }
 
+template<GlmUnderlyingType T, int VecSize>
+    requires ValidGlmVecSize<VecSize>
+bool glmVecEquals(const glm::vec<VecSize, T>& a, const glm::vec<VecSize, T>& b)
+{
+    for (int i = 0; i < VecSize; ++i)
+    {
+        if (!arithmeticEquals(a[i], b[i])) return false;
+    }
+    return true;
+}
+
 template <glm::length_t L, typename T, glm::qualifier Q>
 struct std::formatter<glm::vec<L, T, Q>, char>
 {
