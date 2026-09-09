@@ -59,6 +59,7 @@ inline std::string variantToString(const WhateverVariant& variantOfWhatever)
 SV_DECL_ALIASES(int)
 SV_DECL_ALIASES(bool)
 SV_DECL_ALIASES(double)
+SV_DECL_ALIASES(float)
 SV_DECL_ALIASES(char)
 
 using StringSet = std::set<std::string>;
