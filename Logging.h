@@ -1,5 +1,6 @@
 #pragma once
 #include "Common.h"
+#include "FileUtils.h"
 #include <filesystem>
 #include <cassert>
 
@@ -143,6 +144,11 @@ public:
     {
         categoriesForFilter = blacklistCategories;
         filterIsWhitelist = false;
+    }
+
+    void truncateLogFileIfNeeded(int willTruncIfLargerThanThisSize = 1024 * 256, int truncationToLastBytesSize = 1024 * 128)
+    {
+        ifFileLargerThanLimitTruncateToLastNBytes(logFile, willTruncIfLargerThanThisSize, truncationToLastBytesSize);
     }
 
 private:
