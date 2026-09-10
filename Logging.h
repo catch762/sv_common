@@ -22,7 +22,7 @@ constexpr std::string_view getJustFileName(std::string_view fullPath)
 
 // <internal: these get used by other logging macros>
 #define SV_DO_LOG_FULL(LEVEL, MSG, CATEGORY)  Logger::instance().log(MSG, LEVEL, CATEGORY, SV_FILE_NAME, __LINE__);
-#define SV_DO_LOG_BASE(LEVEL, MSG)            SV_DO_LOG_FULL(LEVEL, MSG, std::string())
+#define SV_DO_LOG_BASE(LEVEL, MSG)            SV_DO_LOG_FULL(LEVEL, MSG, nullptr)
 #define SV_GET_LOG_MACRO_WITH_1_OR_2_ARGS(_1, _2, NAME, ...) NAME
 
 #define SV_LOG1(MSG)                SV_DO_LOG_BASE( Logger::Level::Info,    MSG )
@@ -79,15 +79,16 @@ public:
         return logger;
     }
 
-    //todo this should ve been string view
-    void log(const std::string &msg, Level level, const std::string &category, const std::string_view FILE, int LINE)
+    //todo this should ve been string view.
+    //category can be nullptr
+    void log(const std::string &msg, Level level, const char *category, const std::string_view FILE, int LINE)
     {
         bool isAllowed      = levelIsAllowed(level) && categoryIsAllowed(category);
         bool isForceAllowed = level == Level::Assert;
         if (!isAllowed && !isForceAllowed) return;
 
         auto levelData = getLevelData(level);
-        std::string cat = category.empty() ? "" : format(" [{}]", category);
+        std::string cat = category ? std::format(" [{}]", category) : "";
 
         auto finalText = std::format(R"({}, {} {}{}: {})", FILE, std::to_string(LINE), levelData.name, cat, msg);
 
@@ -151,8 +152,13 @@ private:
         return int(level) >= int(allowedUpTo);
     }
 
-    bool categoryIsAllowed(const std::string &category)
+    bool categoryIsAllowed(const char* category)
     {
+        if (!category)
+        {
+            return !filterIsWhitelist;
+        }
+
         bool existsInCategoryList = categoriesForFilter.find(category) != categoriesForFilter.end();
         return filterIsWhitelist ? existsInCategoryList : !existsInCategoryList;
     }

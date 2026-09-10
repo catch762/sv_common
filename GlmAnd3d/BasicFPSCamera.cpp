@@ -125,11 +125,11 @@ void BasicFPSCamera::lookAtWithoutRoll(glm::vec3 lookAtPos)
     setRoll(0.0);
 }
 
-void BasicFPSCamera::moveBy(glm::vec3 movementRightUpForward)
+void BasicFPSCamera::moveBy(glm::vec3 localright_globalup_localforward)
 {
-    glm::vec3 movement = movementRightUpForward.x * getDirRight() +
-        movementRightUpForward.y * getDirUp() +
-        movementRightUpForward.z * getDir();
+    glm::vec3 movement = localright_globalup_localforward.x * getDirRight() +
+                         localright_globalup_localforward.y * glm::vec3(0,1,0) +
+                         localright_globalup_localforward.z * getDir();
 
     setPos(getPos() + movement);
 }

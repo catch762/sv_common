@@ -42,7 +42,7 @@ public:
 
     glm::vec3   getPos() const;
     void        setPos(glm::vec3 newPos);
-    void        moveBy(glm::vec3 movementRightUpForward);
+    void        moveBy(glm::vec3 localright_globalup_localforward);
 
     float       getPitch() const;
     float       getYaw() const;
