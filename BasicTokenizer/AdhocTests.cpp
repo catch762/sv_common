@@ -169,7 +169,7 @@ void runBasicTokenizerTests()
     auto resultInfo = std::format("BasicTokenizerTests: {} / {} successful.", testsSuccessful, totalTests);
     if (testsSuccessful == totalTests)
     {
-        SV_LOG(resultInfo);
+        SV_INFO(resultInfo);
     }
     else SV_ERROR(resultInfo);
 }

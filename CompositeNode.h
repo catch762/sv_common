@@ -105,7 +105,7 @@ public:
                 const auto &thisChild  = (*thisChildren)[i];
                 const auto &otherChild = (*otherChildren)[i];
 
-                if (thisChild != otherChild) return false;
+                if (!(thisChild == otherChild)) return false;
             }
 
             //all children equal, so

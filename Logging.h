@@ -4,6 +4,40 @@
 #include <filesystem>
 #include <cassert>
 
+
+//******************************************
+// <  COMPILE FLAGS YOU CAN SET EXTERNALLY > 
+//******************************************
+
+#ifndef SV_LOGGER_ENABLED
+    #define SV_LOGGER_ENABLED 1
+#endif
+
+// three logging categories you can enable/disable separately:
+// (you cant disable assert category btw)
+#ifndef SV_LOGGER_INFO_ENABLED
+    #define SV_LOGGER_INFO_ENABLED 1
+#endif
+#ifndef SV_LOGGER_WARN_ENABLED
+    #define SV_LOGGER_WARN_ENABLED 1
+#endif
+#ifndef SV_LOGGER_ERROR_ENABLED
+    #define SV_LOGGER_ERROR_ENABLED 1
+#endif
+
+#ifndef SV_LOGGER_LOG_TO_FILE_ENABLED
+    #define SV_LOGGER_LOG_TO_FILE_ENABLED 1
+#endif
+
+//******************************************
+// <  COMPILE FLAGS YOU CAN SET EXTERNALLY > 
+//******************************************
+
+
+//************************************************
+// <  UGLY ASS INTERNALS - DO NOT BOTHER READING > 
+//************************************************
+
 constexpr std::string_view getJustFileName(std::string_view fullPath)
 {
     size_t last_slash = fullPath.find_last_of("\\/");
@@ -22,21 +56,41 @@ constexpr std::string_view getJustFileName(std::string_view fullPath)
 #endif
 
 // <internal: these get used by other logging macros>
-#define SV_DO_LOG_FULL(LEVEL, MSG, CATEGORY)  Logger::instance().log(MSG, LEVEL, CATEGORY, SV_FILE_NAME, __LINE__);
+// the single call, it all boils down to this line:
+#define SV_DO_LOG_FULL(LEVEL, MSG, CATEGORY)  if constexpr(SV_LOGGER_ENABLED){Logger::instance().log(MSG, LEVEL, CATEGORY, SV_FILE_NAME, __LINE__);}
 #define SV_DO_LOG_BASE(LEVEL, MSG)            SV_DO_LOG_FULL(LEVEL, MSG, nullptr)
 #define SV_GET_LOG_MACRO_WITH_1_OR_2_ARGS(_1, _2, NAME, ...) NAME
 
-#define SV_LOG1(MSG)                SV_DO_LOG_BASE( Logger::Level::Info,    MSG )
-#define SV_LOG2(CATEGORY, MSG)      SV_DO_LOG_FULL( Logger::Level::Info,    MSG, CATEGORY )
-#define SV_WARN1(MSG)               SV_DO_LOG_BASE( Logger::Level::Warn,    MSG )
-#define SV_WARN2(CATEGORY, MSG)     SV_DO_LOG_FULL( Logger::Level::Warn,    MSG, CATEGORY )
-#define SV_ERROR1(MSG)              SV_DO_LOG_BASE( Logger::Level::Error,   MSG )
-#define SV_ERROR2(CATEGORY, MSG)    SV_DO_LOG_FULL( Logger::Level::Error,   MSG, CATEGORY )
+#define SV_INFO1(MSG)               if constexpr(SV_LOGGER_INFO_ENABLED)  {SV_DO_LOG_BASE( Logger::Level::Info,    MSG            )}
+#define SV_INFO2(CATEGORY, MSG)     if constexpr(SV_LOGGER_INFO_ENABLED)  {SV_DO_LOG_FULL( Logger::Level::Info,    MSG, CATEGORY  )}
+#define SV_WARN1(MSG)               if constexpr(SV_LOGGER_WARN_ENABLED)  {SV_DO_LOG_BASE( Logger::Level::Warn,    MSG            )}
+#define SV_WARN2(CATEGORY, MSG)     if constexpr(SV_LOGGER_WARN_ENABLED)  {SV_DO_LOG_FULL( Logger::Level::Warn,    MSG, CATEGORY  )}
+#define SV_ERROR1(MSG)              if constexpr(SV_LOGGER_ERROR_ENABLED) {SV_DO_LOG_BASE( Logger::Level::Error,   MSG            )}
+#define SV_ERROR2(CATEGORY, MSG)    if constexpr(SV_LOGGER_ERROR_ENABLED) {SV_DO_LOG_FULL( Logger::Level::Error,   MSG, CATEGORY  )}
 // </internal>
 
+// For SV_UNREACHABLE:                           
+#ifdef __cpp_lib_unreachable  // C++23, from <utility>
+#define SV_UNREACHABLE_CALL() std::unreachable()
+#elif defined(__GNUC__) || defined(__clang__)
+#define SV_UNREACHABLE_CALL() __builtin_unreachable()
+#elif defined(_MSC_VER)
+#define SV_UNREACHABLE_CALL() __assume(false)
+#else
+#define SV_UNREACHABLE_CALL()
+#endif
+
+//************************************************
+// < /UGLY ASS INTERNALS - DO NOT BOTHER READING > 
+//************************************************
+
+
+//***************************
+// <  ACTUAL MACROS YOU USE > 
+//***************************
 
 //These 3 macros take following arguments: ("MSG") or ("CATEGORY", "MSG").  
-#define SV_LOG(...)     SV_EXP(SV_GET_LOG_MACRO_WITH_1_OR_2_ARGS(__VA_ARGS__, SV_LOG2,     SV_LOG1)    (__VA_ARGS__))
+#define SV_INFO(...)    SV_EXP(SV_GET_LOG_MACRO_WITH_1_OR_2_ARGS(__VA_ARGS__, SV_INFO2,    SV_INFO1)   (__VA_ARGS__))
 #define SV_WARN(...)    SV_EXP(SV_GET_LOG_MACRO_WITH_1_OR_2_ARGS(__VA_ARGS__, SV_WARN2,    SV_WARN1)   (__VA_ARGS__))
 #define SV_ERROR(...)   SV_EXP(SV_GET_LOG_MACRO_WITH_1_OR_2_ARGS(__VA_ARGS__, SV_ERROR2,   SV_ERROR1)  (__VA_ARGS__))
 
@@ -45,18 +99,16 @@ constexpr std::string_view getJustFileName(std::string_view fullPath)
                             SV_DO_LOG_BASE(Logger::Level::Assert, #COND)\
                             assert(false);} }
 
-// <internal>                            
-#ifdef __cpp_lib_unreachable  // C++23, from <utility>
-    #define SV_UNREACHABLE_CALL() std::unreachable()
-#elif defined(__GNUC__) || defined(__clang__)
-    #define SV_UNREACHABLE_CALL() __builtin_unreachable()
-#elif defined(_MSC_VER)
-    #define SV_UNREACHABLE_CALL() __assume(false)
-#else
-    #define SV_UNREACHABLE_CALL()
-#endif
-// </internal>
 #define SV_UNREACHABLE() {SV_ASSERT(false && "Unreachable reached!"); SV_UNREACHABLE_CALL();}
+
+
+
+#define SV_INFO_FOR_LC2(LCMASTERFLAG, MSG)			                if constexpr (LCMASTERFLAG)				{SV_INFO1(MSG);}
+#define SV_INFO_FOR_LC4(LCMASTERFLAG, MSG, CATEGORY, CATEGORYTEXT)	if constexpr (LCMASTERFLAG && CATEGORY)	{SV_INFO2(CATEGORYTEXT, MSG);}
+
+//***************************
+// < /ACTUAL MACROS YOU USE > 
+//***************************
 
 
 class Logger
@@ -100,7 +152,7 @@ public:
     {
         printMessageToTerminal(finalMsg, ansiColor);
 
-        if (printToFile)
+        if constexpr (SV_LOGGER_LOG_TO_FILE_ENABLED)
         {
             appendMessageToFile(finalMsg);
         }
@@ -110,13 +162,13 @@ public:
     {
         auto workFolder = std::filesystem::current_path().string();
 
-        auto text = std::format( "\n"
-                            "**************************************\n"
-                            "--- app launch:  {} \n"
-                            "--- work folder: {} \n"
-                            "**************************************\n",
-                            getCurrentTimeHMS(),
-                            workFolder);
+        auto text = std::format("\n"
+                                "**************************************\n"
+                                "--- app launch:  {} \n"
+                                "--- work folder: {} \n"
+                                "**************************************\n",
+                                getCurrentTimeHMS(),
+                                workFolder);
         doLogMessage(text, std::format("{}{}", ANSICodes::bold, ANSICodes::cyan));
     }
 
@@ -212,6 +264,5 @@ private:
     CategoryList categoriesForFilter;
     bool         filterIsWhitelist = false;
 
-    bool         printToFile = true;
     std::string  logFile = "log.txt";
 };
