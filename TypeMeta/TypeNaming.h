@@ -77,14 +77,7 @@ std::string typeNameStringAssertive()
 class TypeNames
 {
 public:
-	static const char* getTypeName(std::type_index index)
-	{
-		if (const auto* nameFunction = getNameFunction(index))
-		{
-			return (*nameFunction)();
-		}
-		else return nullptr;
-	}
+	static const char* getTypeName(std::type_index index);
 
 	template<typename T>
 	static void registerNameFunction()
@@ -104,18 +97,12 @@ public:
 private:
 	DISABLE_COPY_AND_ASSIGNMENT(TypeNames);
 	TypeNames() = default;
-	static TypeNames& instance()
-	{
-		static TypeNames inst;
-		return inst;
-	}
+
+	static TypeNames& instance();
 
 	using TypeNameFunction = const char* (*)();
 
-	static const TypeNameFunction* getNameFunction(std::type_index index)
-	{
-		return getValue(instance().typeNameFunctions, index);
-	}
+	static const TypeNameFunction* getNameFunction(std::type_index index);
 
 private:
 	std::map<std::type_index, TypeNameFunction> typeNameFunctions;

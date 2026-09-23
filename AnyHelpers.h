@@ -9,53 +9,17 @@
 using anyOpt = std::optional<std::any>;
 
 //note: if any is empty, it will return std::type_index(typeid(void))
-inline std::type_index typeIndex(const std::any& any)
-{
-	return std::type_index(any.type());
-}
+std::type_index typeIndex(const std::any& any);
 
-inline const char* anyTypeName(const std::any& any)
-{
-	return TypeNames::getTypeName(typeIndex(any));
-}
+const char* anyTypeName(const std::any& any);
 
-inline std::string anyTypeNameOrMangled(const std::any& any)
-{
-	if (auto userName = TypeNames::getTypeName(typeIndex(any)))
-	{
-		return userName;
-	}
-	else return any.type().name();
-}
+std::string anyTypeNameOrMangled(const std::any& any);
 
 //this will return true for two empty std::any's
-inline bool anyHoldSameType(const std::any& first, const std::any& second)
-{
-	return typeIndex(first) == typeIndex(second);
-}
-inline bool anyHoldSameType(const std::any* first, const std::any* second)
-{
-	SV_ASSERT(first);
-	SV_ASSERT(second);
-	return anyHoldSameType(*first, *second);
-}
+bool anyHoldSameType(const std::any& first, const std::any& second);
+bool anyHoldSameType(const std::any* first, const std::any* second);
 
-inline std::string anyInfo(const std::any& any)
-{
-	if (!any.has_value())
-	{
-		return "any_empty[]";
-	}
-	else if (auto* myTypeName = anyTypeName(any))
-	{
-		return std::format("any_named[{}]", myTypeName);
-	}
-	else
-	{
-		//prints mangled name
-		return std::format("any_unnamed[{}]", any.type().name());
-	}
-}
+std::string anyInfo(const std::any& any);
 
 template <typename T>
 bool anyHoldsType(const std::any& any)
