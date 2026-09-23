@@ -167,138 +167,45 @@ public:
         Last = Assert
     };
 
-    static Logger& instance()
-    {
-        static Logger logger;
-        return logger;
-    }
+    static Logger& instance();
 
     //todo this should ve been string view.
     //category can be nullptr
-    void log(const std::string &msg, Level level, const char *category, const std::string_view FILE, int LINE)
-    {
-        bool isAllowed      = levelIsAllowed(level) && categoryIsAllowed(category);
-        bool isForceAllowed = level == Level::Assert;
-        if (!isAllowed && !isForceAllowed) return;
+    void log(const std::string& msg, Level level, const char* category, const std::string_view FILE, int LINE);
 
-        auto levelData = getLevelData(level);
-        std::string cat = category ? std::format(" [{}]", category) : "";
+    void doLogMessage(const std::string& finalMsg, const std::string& ansiColor);
 
-        auto finalText = std::format(R"({}, {} {}{}: {})", FILE, std::to_string(LINE), levelData.name, cat, msg);
+    void logAppLaunchMessage();
 
-        doLogMessage(finalText, std::string(levelData.ansiColor));
-    }
-
-    void doLogMessage(const std::string &finalMsg, const std::string &ansiColor)
-    {
-        printMessageToTerminal(finalMsg, ansiColor);
-
-        if constexpr (SV_LOGGER_LOG_TO_FILE_ENABLED)
-        {
-            appendMessageToFile(finalMsg);
-        }
-    }
-
-    void logAppLaunchMessage()
-    {
-        auto workFolder = std::filesystem::current_path().string();
-
-        auto text = std::format("\n"
-                                "**************************************\n"
-                                "--- app launch:  {} \n"
-                                "--- work folder: {} \n"
-                                "**************************************\n",
-                                getCurrentTimeHMS(),
-                                workFolder);
-        doLogMessage(text, std::format("{}{}", ANSICodes::bold, ANSICodes::cyan));
-    }
-
-    void logAppExitMessage(int returnCode)
-    {
-        auto text = std::format("-------- app exited with {} ---------", returnCode);
-        doLogMessage(text, std::format("{}{}", ANSICodes::bold, ANSICodes::cyan));
-    }
+    void logAppExitMessage(int returnCode);
 
     // e.g. setting it to Level::Warn will completely filter out Level::Info
     // messages from all logs, because its less significant level.
     // Setting it to Level::Info allows everything.
-    void setMinimallySignificantAllowedLevel(Level level)
-    {
-        allowedUpTo = level;
-    }
+    void setMinimallySignificantAllowedLevel(Level level);
 
     // Logger operates in one of these two modes, whitelist or blacklist:
-    void setPrintOnlyTheseCategoriesMode(const CategoryList& whitelistCategories)
-    {
-        categoriesForFilter = whitelistCategories;
-        filterIsWhitelist = true;
-    }
-    void setPrintEverythingExceptTheseCategoriesMode(const CategoryList& blacklistCategories)
-    {
-        categoriesForFilter = blacklistCategories;
-        filterIsWhitelist = false;
-    }
+    void setPrintOnlyTheseCategoriesMode(const CategoryList& whitelistCategories);
+    void setPrintEverythingExceptTheseCategoriesMode(const CategoryList& blacklistCategories);
 
-    void truncateLogFileIfNeeded(int willTruncIfLargerThanThisSize = 1024 * 256, int truncationToLastBytesSize = 1024 * 128)
-    {
-        ifFileLargerThanLimitTruncateToLastNBytes(logFile, willTruncIfLargerThanThisSize, truncationToLastBytesSize);
-    }
+    void truncateLogFileIfNeeded(int willTruncIfLargerThanThisSize  = 1024 * 256,
+                                 int truncationToLastBytesSize      = 1024 * 128);
 
 private:
-    bool levelIsAllowed(Level level)
-    {
-        if (level == Level::Assert) return true;
-        return int(level) >= int(allowedUpTo);
-    }
+    bool levelIsAllowed(Level level);
 
-    bool categoryIsAllowed(const char* category)
-    {
-        if (!category)
-        {
-            return !filterIsWhitelist;
-        }
-
-        bool existsInCategoryList = categoriesForFilter.find(category) != categoriesForFilter.end();
-        return filterIsWhitelist ? existsInCategoryList : !existsInCategoryList;
-    }
+    bool categoryIsAllowed(const char* category);
 
     struct LevelData
     {
         std::string name;
         std::string_view ansiColor;
     };
-    const LevelData& getLevelData(Level level)
-    {
-        const int entriesCount = 4;
-        static_assert(entriesCount == int(Level::Last) + 1);
-        static LevelData dataArray[entriesCount] = {
-            {"INFO", ANSICodes::none},
-            {"WARN", ANSICodes::orange},
-            {"ERROR", ANSICodes::red},
-            {"ASSERT FAILED", ANSICodes::red} 
-        };
+    const LevelData& getLevelData(Level level);
 
-        int idx = int(level);
+    void printMessageToTerminal(const std::string& msg, const std::string& ansiColorCode);
 
-        if (idx < 0 || idx >= entriesCount)
-        {
-            static LevelData errVal{"WrongLoggingLevel", ANSICodes::cyan};
-            return errVal;
-        }
-
-        return dataArray[idx];
-    };
-
-    void printMessageToTerminal(const std::string &msg, const std::string &ansiColorCode)
-    {
-        std::cout << ANSICodes::reset << ansiColorCode << msg << ANSICodes::reset << std::endl;
-    }
-
-    void appendMessageToFile(const std::string &msg)
-    {
-        std::ofstream ofs(logFile, std::ios::app);
-	    ofs << msg << std::endl;
-    }
+    void appendMessageToFile(const std::string& msg);
 
 private:
     Level        allowedUpTo = Level::Info;

@@ -70,33 +70,22 @@ T normalizeAngle_minusPi_Pi(T angle)
 }
 
 template <typename T>
-inline T radTo11(T radians)
+T radTo11(T radians)
 {
     return normalizeAngle_minusPi_Pi(radians) / glm::pi<T>();
 }
 
 
 template <typename T>
-inline T ang11ToRad(T ang11)
+T ang11ToRad(T ang11)
 {
     return ang11 * glm::pi<T>();
 }
 
 
 
-inline bool vectorsParallel(const glm::vec3& v1, const glm::vec3& v2, float epsilon = 0.0000001f)
-{
-    // Compute the cross product
-    glm::vec3 crossProd = glm::cross(v1, v2);
-
-    // Check if the squared length of the cross product is near zero
-    return glm::length2(crossProd) < epsilon;
-}
-
-inline std::string toString(glm::vec3 vec)
-{
-    return std::format("[{:.2f}, {:.2f}, {:.2f}]", vec.x, vec.y, vec.z);
-}
+bool vectorsParallel(const glm::vec3& v1, const glm::vec3& v2, float epsilon = 0.0000001f);
+std::string toString(glm::vec3 vec);
 
 template<GlmUnderlyingType T, int VecSize>
     requires ValidGlmVecSize<VecSize>
