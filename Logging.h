@@ -10,23 +10,23 @@
 //******************************************
 
 #ifndef SV_LOGGER_ENABLED
-    #define SV_LOGGER_ENABLED 1
+#define SV_LOGGER_ENABLED 1
 #endif
 
 // three logging categories you can enable/disable separately:
 // (you cant disable assert category btw)
 #ifndef SV_LOGGER_INFO_ENABLED
-    #define SV_LOGGER_INFO_ENABLED 1
+#define SV_LOGGER_INFO_ENABLED 1
 #endif
 #ifndef SV_LOGGER_WARN_ENABLED
-    #define SV_LOGGER_WARN_ENABLED 1
+#define SV_LOGGER_WARN_ENABLED 1
 #endif
 #ifndef SV_LOGGER_ERROR_ENABLED
-    #define SV_LOGGER_ERROR_ENABLED 1
+#define SV_LOGGER_ERROR_ENABLED 1
 #endif
 
 #ifndef SV_LOGGER_LOG_TO_FILE_ENABLED
-    #define SV_LOGGER_LOG_TO_FILE_ENABLED 1
+#define SV_LOGGER_LOG_TO_FILE_ENABLED 1
 #endif
 
 //******************************************
@@ -102,13 +102,54 @@ constexpr std::string_view getJustFileName(std::string_view fullPath)
 #define SV_UNREACHABLE() {SV_ASSERT(false && "Unreachable reached!"); SV_UNREACHABLE_CALL();}
 
 
-
+//these are for creating macros for some module/category. See example just below.
 #define SV_INFO_FOR_LC2(LCMASTERFLAG, MSG)			                if constexpr (LCMASTERFLAG)				{SV_INFO1(MSG);}
 #define SV_INFO_FOR_LC4(LCMASTERFLAG, MSG, CATEGORY, CATEGORYTEXT)	if constexpr (LCMASTERFLAG && CATEGORY)	{SV_INFO2(CATEGORYTEXT, MSG);}
 
 //***************************
 // < /ACTUAL MACROS YOU USE > 
 //***************************
+
+//*****************************************************************
+// <  EXAMPLE OF CREATING LOGGING MACROS FOR SOME MODULE/CATEGORY > 
+//*****************************************************************
+
+//All the flags are written like that, so that they have
+//a default value, only if they werent set externally (like, in Cmake)
+
+//Master flag for this logging category, if its 0, all logs disabled.
+#ifndef SV_LC_KEKMODULE
+#define SV_LC_KEKMODULE 1
+#endif
+
+//Subcategory which is OFF by default, unless set externally
+#ifndef SV_LC_KEKMODULE_APPLES
+#define SV_LC_KEKMODULE_APPLES 0
+#endif
+
+//Subcategory which is ON by default, unless set externally
+#ifndef SV_LC_KEKMODULE_ORANGES
+#define SV_LC_KEKMODULE_ORANGES 1
+#endif
+
+//Two logging macros you will use
+#define SV_KEKMODULE_INFO(MSG)				SV_INFO_FOR_LC2(SV_LC_KEKMODULE, MSG)
+#define SV_KEKMODULE_INFO_C(CATEGORY, MSG)	SV_INFO_FOR_LC4(SV_LC_KEKMODULE, MSG, CATEGORY, #CATEGORY)
+
+//Usage:
+ 
+//  (Ofocurse both macros can only work when this logging level in general is enabled, i.e.
+//  SV_LOGGER_ENABLED and SV_LOGGER_INFO_ENABLED are 1)
+
+//  Prints when SV_LC_KEKMODULE is 1
+//  SV_KEKMODULE_INFO("Hello")
+// 
+//  Prints when SV_LC_KEKMODULE and SV_LC_KEKMODULE_ORANGES are 1
+//  SV_KEKMODULE_INFO_C(SV_LC_KEKMODULE_ORANGES, "World")
+
+//*****************************************************************
+// < /EXAMPLE OF CREATING LOGGING MACROS FOR SOME MODULE/CATEGORY > 
+//*****************************************************************
 
 
 class Logger
